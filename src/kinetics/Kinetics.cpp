@@ -250,9 +250,9 @@ void Kinetics::forwardRatesOfProgress(double* const p_ropf)
 //==============================================================================
 
 void Kinetics::forwardRatesOfProgress(
-    const double* const p_conc, double* const p_ropb)
+    const double* const p_conc, double* const p_ropf)
 {
-    forwardRatesOfProgress(p_conc, p_ropb, true);
+    forwardRatesOfProgress(p_conc, p_ropf, true);
 }
 
 //==============================================================================
