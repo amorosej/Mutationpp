@@ -216,6 +216,14 @@ private:
      * addReaction()).
      */
     void closeReactions(const bool validate_mechanism = false);
+    
+    /*
+     * Used in netRatesOfProgress()
+     */
+    void forwardRatesOfProgress(
+        const double* const p_conc, double* const p_ropf, bool multTB);
+    void backwardRatesOfProgress(
+        const double* const p_conc, double* const p_ropb, bool multTB);
 
 private:
 

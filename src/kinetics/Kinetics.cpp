@@ -250,11 +250,20 @@ void Kinetics::forwardRatesOfProgress(double* const p_ropf)
 //==============================================================================
 
 void Kinetics::forwardRatesOfProgress(
-    const double* const p_conc, double* const p_ropf)
+    const double* const p_conc, double* const p_ropb)
+{
+    forwardRatesOfProgress(p_conc, p_ropb, true);
+}
+
+//==============================================================================
+
+void Kinetics::forwardRatesOfProgress(
+    const double* const p_conc, double* const p_ropf, bool multTB)
 {
     forwardRateCoefficients(p_ropf);
     m_reactants.multReactions(p_conc, p_ropf);
-    m_thirdbodies.multiplyThirdbodies(p_conc, p_ropf);
+    if (multTB)
+        m_thirdbodies.multiplyThirdbodies(p_conc, p_ropf);
 }
 
 //==============================================================================
@@ -274,9 +283,18 @@ void Kinetics::backwardRatesOfProgress(double* const p_ropb)
 void Kinetics::backwardRatesOfProgress(
     const double* const p_conc, double* const p_ropb)
 {
+    backwardRatesOfProgress(p_conc, p_ropb, true);
+}
+
+//==============================================================================
+
+void Kinetics::backwardRatesOfProgress(
+    const double* const p_conc, double* const p_ropb, bool multTB)
+{
     backwardRateCoefficients(p_ropb);
     m_rev_prods.multReactions(p_conc, p_ropb);
-    m_thirdbodies.multiplyThirdbodies(p_conc, p_ropb);
+    if (multTB)
+        m_thirdbodies.multiplyThirdbodies(p_conc, p_ropb);
 }
 
 /*
@@ -313,11 +331,13 @@ void Kinetics::netRatesOfProgress(double* const p_rop)
 void Kinetics::netRatesOfProgress(
     const double* const p_conc, double* const p_rop)
 {
-    forwardRatesOfProgress(p_conc, mp_ropf);
-    backwardRatesOfProgress(p_conc, mp_ropb);
+    forwardRatesOfProgress(p_conc, mp_ropf, false);
+    backwardRatesOfProgress(p_conc, mp_ropb, false);
 
     Map<ArrayXd>(p_rop, nReactions()) = 
         Map<ArrayXd>(mp_ropf, nReactions()) - Map<ArrayXd>(mp_ropb, nReactions());
+    
+    m_thirdbodies.multiplyThirdbodies(p_conc, p_rop);
 }
 
 /*
