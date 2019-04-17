@@ -79,6 +79,7 @@ public:
     void addReaction(const size_t rxn, const Reaction& reaction) {
         m_reacs.addReaction(rxn, reaction.reactants());
         m_prods.addReaction(rxn, reaction.products());
+        m_reacList.push_back(rxn);
     }
     
     /**
@@ -107,6 +108,10 @@ public:
         // Now subtract \Delta[G_i/RT - ln(Patm/RT)]_j
         m_reacs.decrReactions(p_g, p_r);
         m_prods.incrReactions(p_g, p_r);
+        
+        // Add a correction factor needed for specific types of reaction
+        for (int i = 0; i < m_reacList.size(); ++i)
+            p_r[m_reacList[i]] += m_lnKeqCorrFac;
     }
     
 
@@ -124,6 +129,12 @@ protected:
     /// Stores the products for reactions that will use this rate law for the
     /// reverse direction
     StoichiometryManager m_prods;
+    
+    /// Stores the index of reactions using this rate law for the reverse direction.
+    std::vector<size_t> m_reacList;
+    
+    /// Correction factor (should be set in the lnk() function).
+    double m_lnKeqCorrFac;
 };
 
 
@@ -170,6 +181,9 @@ public:
 
         // Save this temperature
         m_last_t = m_t;
+        
+        // Compute and store the correction factor
+        m_lnKeqCorrFac = TSelectorType().lnKeqCorrFac(p_state);
     }
 
 private:
