@@ -63,13 +63,13 @@ TEST_CASE
         }
 
         SECTION("Total") {
-            VectorXd omega(mix.nEnergyEqns()-1);
+            VectorXd omega(mix.nEnergyEqns());
 
             EQUILIBRATE_LOOP
             (
                 mix.energyTransferSource(omega.data());
                 double rhoe = mix.mixtureEnergyMass()*mix.density();
-                for (int i = 0; i < mix.nEnergyEqns()-1; ++i)
+                for (int i = 0; i < mix.nEnergyEqns(); ++i)
                     CHECK(omega[i]/rhoe == Approx(0.0).margin(tol));
             )
         }

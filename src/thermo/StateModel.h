@@ -275,7 +275,7 @@ public:
      */
     virtual void energyTransferSource(double* const p_omega)
     {
-        for (int i = 0; i < m_nenergy-1; ++i)
+        for (int i = 0; i < m_nenergy; ++i)
             p_omega[i] = 0.0;
 
         for (int i = 0; i < m_source_terms.size(); ++i)
@@ -298,16 +298,16 @@ protected:
     void addTransferTerm(int i, Mutation::Transfer::TransferModel* p_term)
     {
         assert(i >= 0);
-        assert(i < m_nenergy-1);
+        assert(i < m_nenergy);
         m_source_terms.push_back(std::make_pair(i, p_term));
     }
     
     void addTransferTerm(int i, int j, Mutation::Transfer::TransferModel* p_term)
     {
         assert(i >= 0);
-        assert(i < m_nenergy-1);
+        assert(i < m_nenergy);
         assert(j >= 0);
-        assert(j < m_nenergy-1);
+        assert(j < m_nenergy);
         m_transfer_terms.push_back(std::make_pair(std::make_pair(i,j), p_term));
     }
     
