@@ -291,12 +291,11 @@ public:
     
 protected:
     /**
-    * @todo add a removeTransferTerm for the case wehen the
-    * source term is negative, e.g, solving Vibrational
-    * and Electronic energy equations
+    * Total energy <=> i=0.
     */
     void addTransferTerm(int i, Mutation::Transfer::TransferModel* p_term)
     {
+        // Energy may be removed from total energy bath (i=0).
         assert(i >= 0);
         assert(i < m_nenergy);
         m_source_terms.push_back(std::make_pair(i, p_term));
@@ -304,9 +303,10 @@ protected:
     
     void addTransferTerm(int i, int j, Mutation::Transfer::TransferModel* p_term)
     {
-        assert(i >= 0);
+        // Energy cannot be transferred from total energy bath (i=0).
+        assert(i > 0);
         assert(i < m_nenergy);
-        assert(j >= 0);
+        assert(j > 0);
         assert(j < m_nenergy);
         m_transfer_terms.push_back(std::make_pair(std::make_pair(i,j), p_term));
     }
