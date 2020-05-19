@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright 2014-2018 von Karman Institute for Fluid Dynamics (VKI)
+ * Copyright 2014-2020 von Karman Institute for Fluid Dynamics (VKI)
  *
  * This file is part of MUlticomponent Thermodynamic And Transport
  * properties for IONized gases in C++ (Mutation++) software package.
@@ -98,11 +98,11 @@ ParticleRRHO::ParticleRRHO(const IO::XmlElement& xml_element)
 //==============================================================================
 
 ParticleRRHO::ParticleRRHO(const ParticleRRHO& rrho, const size_t level)
-    : m_hform(rrho.m_hform + rrho.electronicEnergy(level).second),
+    : m_hform(rrho.m_hform + RU*rrho.electronicEnergy(level).second),
       m_steric(rrho.m_steric),
       m_linearity(rrho.m_linearity),
       m_rotational_t(rrho.m_rotational_t),
-      m_electronic_energies(1, rrho.electronicEnergy(level)),
+      m_electronic_energies(1, std::make_pair(rrho.electronicEnergy(level).first, 0.0)),
       m_vibrational_energies(rrho.m_vibrational_energies)
 {
     // Make sure the level used is actually present in the given RRHO parameters
