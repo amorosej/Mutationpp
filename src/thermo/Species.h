@@ -111,6 +111,16 @@ enum ParticleType {
 };
 
 /**
+ * Enumerates the possible types of internal energy levels.
+ */
+enum LevelType {
+    NONE,
+    ELECTRONIC,
+    VIBRATIONAL,
+    ROTATIONAL
+};
+
+/**
  * Stores basic information about a species including how many elements belong
  * to the species, its charge, and phase type.
  */
@@ -131,7 +141,8 @@ public:
     /// Default constructor.
     Species()
         : m_name(""), m_ground_state_name(""), m_mw(0.0), m_charge(0),
-          m_phase(GAS), m_type(ATOM), m_level(0)
+          m_phase(GAS), m_type(ATOM), m_levelType(NONE),
+          m_level(0), m_vibLevel(0), m_rotLevel(0)
     { }
     
     /**
@@ -152,6 +163,18 @@ public:
      * state of the given species.
      */
     Species(const Species& species, const size_t level);
+    
+    /**
+     * Instantiate a new species object which represents a single vibrational
+     * state of the given species.
+     */
+    Species(const Species& species, size_t level, size_t vlevel);
+    
+    /**
+     * Instantiate a new species object which represents a single rotational
+     * state of the given species.
+     */
+    Species(const Species& species, size_t level, size_t vlevel, size_t rlevel);
     
     /**
      * Copy constructor.
@@ -261,10 +284,31 @@ public:
     }
     
     /**
-     * Returns the excited state level if this is an excited state species.
+     * Returns the type of internal level this species represents.
+     */
+    LevelType levelType() const { 
+        return m_levelType; 
+    }
+    
+    /**
+     * Returns the electronic level if this is an excited state species.
      */
     std::size_t level() const {
         return m_level;
+    }
+    
+    /**
+     * Returns the vibrational level if this is an excited state species.
+     */
+    std::size_t vibLevel() const {
+        return m_vibLevel;
+    }
+    
+    /**
+     * Returns the rotational level if this is an excited state species.
+     */
+    std::size_t rotLevel() const {
+        return m_rotLevel;
     }
     
     friend void swap(Species&, Species&);
@@ -286,6 +330,10 @@ private:
     PhaseType    m_phase;
     ParticleType m_type;
     std::size_t  m_level;
+    
+    std::size_t  m_vibLevel;
+    std::size_t  m_rotLevel;
+    LevelType    m_levelType;
     
     StoichList m_stoichiometry;
     

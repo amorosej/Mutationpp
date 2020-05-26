@@ -69,6 +69,13 @@ public:
     ParticleRRHO(const ParticleRRHO& p_rrho, const size_t level);
     
     /**
+     * Loads the parameters from an XmlElement to construct a RRHO object
+     * representing a single internal energy level, defined by a set of indices.
+     */
+    ParticleRRHO(const Mutation::Utilities::IO::XmlElement& xml_element,
+                 const std::vector<size_t>& indices);
+    
+    /**
      * Returns the formation enthalpy in J/mol.
      */
     double formationEnthalpy() const {
