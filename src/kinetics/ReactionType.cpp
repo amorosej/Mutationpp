@@ -73,6 +73,22 @@ const char* const reactionTypeString(const ReactionType type)
             return "electron impact excitation/deexcitation";
         case EXCITATION_M:
             return "heavy particle impact excitation/deexcitation";
+        case PHOTO_IONIZATION:
+            return "photo-ionization";
+        case RADIATIVE_RECOMBINATION:
+            return "radiative recombination";
+        case PHOTO_DETACHMENT:
+            return "photo-detachment";
+        case RADIATIVE_ATTACHMENT:
+            return "radiative attachment";
+        case PHOTO_DISSOCIATION:
+            return "photo-dissociation";
+        case RADIATIVE_ASSOCIATION:
+            return "radiative association";
+        case BND_BND_EMISSION:
+            return "bound-bound emission";
+        case BND_BND_ABSORPTION:
+            return "bound-bound absorption";
         default:
             return "unknown type";
     }

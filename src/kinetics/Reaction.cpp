@@ -48,6 +48,8 @@ void swap(Reaction& left, Reaction& right) {
     swap(left.m_thirdbody,   right.m_thirdbody);
     swap(left.m_conserves,   right.m_conserves);
     swap(left.m_thirdbodies, right.m_thirdbodies);
+    swap(left.m_nPhotReac,   right.m_nPhotReac);
+    swap(left.m_nPhotProd,   right.m_nPhotProd);
     swap(left.m_type,        right.m_type);
     swap(left.mp_rate,       right.mp_rate);
 }
@@ -125,6 +127,9 @@ Reaction::Reaction(const IO::XmlElement& node, const class Thermodynamics& therm
 
     // Figure out what type of reaction this is
     determineType(thermo);
+    
+    if (m_nPhotReac > 0 || (m_nPhotProd > 0 && m_reversible))
+        node.parseError("This type of reaction is not supported yet !");
 }
 
 //==============================================================================
@@ -138,7 +143,9 @@ bool Reaction::operator == (const Reaction& r)
         // A + B <=> AB  =  A + B  => AB
         // A + B  => AB  =  A + B  => AB
         if (m_reactants == r.m_reactants &&
-            m_products == r.m_products)
+            m_products == r.m_products &&
+            m_nPhotReac == r.m_nPhotReac &&
+            m_nPhotProd == r.m_nPhotProd)
             return true;
 
         // A + B <=> AB  =  AB <=> A + B,
@@ -146,7 +153,9 @@ bool Reaction::operator == (const Reaction& r)
         // A + B <=> AB  =  AB  => A + B
         if (m_reactants == r.m_products &&
             m_products == r.m_reactants &&
-            !(isReversible() && r.isReversible()))
+            m_nPhotReac == r.m_nPhotProd &&
+            m_nPhotProd == r.m_nPhotReac &&
+            (isReversible() || r.isReversible()))
             return true;
     }
 
@@ -183,15 +192,15 @@ void Reaction::parseFormula(
 
     // Now that we have reactant and product strings, we can parse each
     // separately using the same algorithm
-    parseSpecies(m_reactants, reactants, node, thermo);
-    parseSpecies(m_products,  products,  node, thermo);
+    parseSpecies(m_reactants, m_nPhotReac, reactants, node, thermo);
+    parseSpecies(m_products, m_nPhotProd, products,  node, thermo);
 }
 
 //==============================================================================
 
 void Reaction::parseSpecies(
-    std::vector<int>& species, std::string& str, const IO::XmlElement& node,
-    const class Thermodynamics& thermo)
+    std::vector<int>& species, int& nPhotons, std::string& str,
+    const IO::XmlElement& node, const class Thermodynamics& thermo)
 {
     // State-Machine states for parsing a species formula
     enum ParseState {
@@ -205,7 +214,9 @@ void Reaction::parseSpecies(
     size_t e = 0;
     int nu   = 1;
     bool add_species = false;
-
+    
+    nPhotons = 0;
+    
     // Remove all spaces to simplify the state machine logic
     String::eraseAll(str, " ");
 
@@ -251,6 +262,8 @@ void Reaction::parseSpecies(
         if (add_species) {
             if (str.substr(s,e-s+1) == "M") {
                 m_thirdbody = true;
+            } else if (str.substr(s,e-s+1) == "hv") {
+                nPhotons = nu;                
             } else {
                 int index = thermo.speciesIndex(str.substr(s,e-s+1));
                 if (index >= 0)
@@ -322,66 +335,104 @@ void Reaction::determineType(const class Thermodynamics& thermo)
     m_inert_e = (product_electron && reactant_electron);
 
     // ---------------- Logic tree ----------------
-    if (ecount > 0) {
+    
+    if ( (m_nPhotReac > 0) || (m_nPhotProd > 0) ) {
         
-        if (chgcount > 0) {
-           if (m_inert_e)
-              m_type = ION_RECOMBINATION_E;
-           else if (m_inert)
-              m_type = ION_RECOMBINATION_M;
-           else 
-              m_type = DISSOCIATIVE_RECOMBINATION;
-           
-        } else {
-            if (m_inert_e)
-               m_type = ELECTRONIC_ATTACHMENT_E;
-            else if (m_inert)
-               m_type = ELECTRONIC_ATTACHMENT_M;
-            else 
-               m_type = DISSOCIATIVE_ATTACHMENT;
-        }
-        
-    } else if (ecount < 0) {
-        
-        if (chgcount > 0) {
-            if (m_inert_e)
-                m_type = ELECTRONIC_DETACHMENT_E;
-            else if (m_inert)
-                m_type = ELECTRONIC_DETACHMENT_M;
-            else 
-                m_type = ASSOCIATIVE_DETACHMENT;
+        if (ecount > 0) {
+            
+            if (chgcount > 0)
+                m_type = RADIATIVE_RECOMBINATION;
+            else
+                m_type = RADIATIVE_ATTACHMENT;
+            
+        } else if (ecount < 0) {
+            
+            if (chgcount > 0)
+                m_type = PHOTO_DETACHMENT;
+            else
+                m_type = PHOTO_IONIZATION;
             
         } else {
-            if (m_inert_e)
-                m_type = IONIZATION_E;
-            else if (m_inert)
-                m_type = IONIZATION_M;
-            else 
-                m_type = ASSOCIATIVE_IONIZATION;
+            
+            if (nReactants() > nProducts()) {
+                m_type = RADIATIVE_ASSOCIATION;
+                    
+            } else if (nReactants() < nProducts()) {
+                m_type = PHOTO_DISSOCIATION;
+                
+            } else {
+                if (m_nPhotProd > m_nPhotReac)
+                    m_type = BND_BND_EMISSION;
+                else if (m_nPhotProd < m_nPhotReac)
+                    m_type = BND_BND_ABSORPTION;
+            }
+            
         }
         
     } else {
         
-        if (nReactants() > nProducts()) {
-            if (m_inert_e)
-                m_type = RECOMBINATION_E;
-            else
-                m_type = RECOMBINATION_M;   // including double recombination        
+        if (ecount > 0) {
+            
+            if (chgcount > 0) {
+                if (m_inert_e)
+                    m_type = ION_RECOMBINATION_E;
+                else if (m_inert)
+                    m_type = ION_RECOMBINATION_M;
+                else 
+                    m_type = DISSOCIATIVE_RECOMBINATION;
+            
+            } else {
+                if (m_inert_e)
+                    m_type = ELECTRONIC_ATTACHMENT_E;
+                else if (m_inert)
+                    m_type = ELECTRONIC_ATTACHMENT_M;
+                else 
+                    m_type = DISSOCIATIVE_ATTACHMENT;
+            }
+            
+        } else if (ecount < 0) {
+            
+            if (chgcount > 0) {
+                if (m_inert_e)
+                    m_type = ELECTRONIC_DETACHMENT_E;
+                else if (m_inert)
+                    m_type = ELECTRONIC_DETACHMENT_M;
+                else 
+                    m_type = ASSOCIATIVE_DETACHMENT;
                 
-        } else if (nReactants() < nProducts()) {
-            if (m_inert_e)
-                m_type = DISSOCIATION_E;
-            else
-                m_type = DISSOCIATION_M;   // including double dissociation  
+            } else {
+                if (m_inert_e)
+                    m_type = IONIZATION_E;
+                else if (m_inert)
+                    m_type = IONIZATION_M;
+                else 
+                    m_type = ASSOCIATIVE_IONIZATION;
+            }
             
         } else {
-            if (m_inert_e)
-                m_type = EXCITATION_E;
-            else if (m_inert)
-                m_type = EXCITATION_M;
-            else
-                m_type = EXCHANGE;  // exchange of charge, atom, or both simultaneously
-        } 
+            
+            if (nReactants() > nProducts()) {
+                if (m_inert_e)
+                    m_type = RECOMBINATION_E;
+                else
+                    m_type = RECOMBINATION_M;   // including double recombination
+                    
+            } else if (nReactants() < nProducts()) {
+                if (m_inert_e)
+                    m_type = DISSOCIATION_E;
+                else
+                    m_type = DISSOCIATION_M;   // including double dissociation
+                
+            } else {
+                if (m_inert_e)
+                    m_type = EXCITATION_E;
+                else if (m_inert)
+                    m_type = EXCITATION_M;
+                else
+                    m_type = EXCHANGE;  // exchange of charge, atom, or both simultaneously
+            }
+            
+        }
     }
 }
 

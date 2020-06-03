@@ -107,6 +107,9 @@ SELECT_RATE_LAWS(ELECTRONIC_DETACHMENT_E,    ArrheniusTe,   ArrheniusTe)
 SELECT_RATE_LAWS(EXCHANGE,                   ArrheniusT,    ArrheniusT)
 SELECT_RATE_LAWS(EXCITATION_M,               ArrheniusT,    ArrheniusT)
 SELECT_RATE_LAWS(EXCITATION_E,               ArrheniusTe,   ArrheniusTe)
+SELECT_RATE_LAWS(RADIATIVE_RECOMBINATION,    ArrheniusTe,   ArrheniusT)
+SELECT_RATE_LAWS(RADIATIVE_ATTACHMENT,       ArrheniusTe,   ArrheniusT)
+SELECT_RATE_LAWS(RADIATIVE_ASSOCIATION,      ArrheniusT,    ArrheniusT)
 
 #undef SELECT_RATE_LAWS
 

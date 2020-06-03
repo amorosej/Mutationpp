@@ -65,6 +65,8 @@ public:
           m_thirdbody(reaction.m_thirdbody),
           m_conserves(reaction.m_conserves),
           m_thirdbodies(reaction.m_thirdbodies),
+          m_nPhotReac(reaction.m_nPhotReac),
+          m_nPhotProd(reaction.m_nPhotProd),
           m_type(reaction.m_type),
           mp_rate(reaction.mp_rate ? reaction.mp_rate->clone() : NULL)
     { }
@@ -246,7 +248,7 @@ private:
      * multiple times to the species list. 
      */
     void parseSpecies(
-        std::vector<int>& species, std::string& str,
+        std::vector<int>& species, int& nPhotons, std::string& str,
         const Mutation::Utilities::IO::XmlElement& node,
         const Mutation::Thermodynamics::Thermodynamics& thermo);
     
@@ -267,6 +269,9 @@ private:
     bool m_conserves;
     
     std::vector<std::pair<int, double> > m_thirdbodies;
+    
+    int m_nPhotReac;
+    int m_nPhotProd;
     
     ReactionType m_type;
     RateLaw* mp_rate;
