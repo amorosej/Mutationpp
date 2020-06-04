@@ -91,7 +91,8 @@ public:
         int inv = 0;
         double src = 0.0;
         for (int iv = 0; iv-inv < m_mw.nVibrators(); ++iv){
-            if(m_mixture.species(iv).type() != Mutation::Thermodynamics::MOLECULE){
+            if(m_mixture.species(iv).type() != Mutation::Thermodynamics::MOLECULE
+                || m_mixture.species(iv).levelType() > Mutation::Thermodynamics::ELECTRONIC ){
                 inv++;
             } else {
                 src += p_Y[iv]*rho*RU*T/mp_Mw[iv]*(mp_hveq[iv] - mp_hv[iv])/compute_tau_VT_m(iv-inv);

@@ -106,8 +106,8 @@ Species::Species(const Species& to_copy, const size_t level) :
     m_type(to_copy.m_type),
     m_levelType(ELECTRONIC),
     m_level(level),
-    m_vibLevel(to_copy.m_vibLevel),
-    m_rotLevel(to_copy.m_rotLevel),
+    m_vibLevel(0),
+    m_rotLevel(0),
     m_stoichiometry(to_copy.m_stoichiometry)
 { 
     stringstream ss;
@@ -127,7 +127,7 @@ Species::Species(const Species& to_copy, size_t level, size_t vlevel) :
     m_levelType(VIBRATIONAL),
     m_level(level),
     m_vibLevel(vlevel),
-    m_rotLevel(to_copy.m_rotLevel),
+    m_rotLevel(0),
     m_stoichiometry(to_copy.m_stoichiometry)
 { 
     stringstream ss;

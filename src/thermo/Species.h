@@ -329,11 +329,11 @@ private:
     int          m_charge;
     PhaseType    m_phase;
     ParticleType m_type;
-    std::size_t  m_level;
     
+    LevelType    m_levelType;
+    std::size_t  m_level;
     std::size_t  m_vibLevel;
     std::size_t  m_rotLevel;
-    LevelType    m_levelType;
     
     StoichList m_stoichiometry;
     

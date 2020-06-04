@@ -108,21 +108,27 @@ SpeciesListDescriptor::SpeciesListDescriptor(std::string descriptor)
             
             size_t epos = it->find(')', spos);
             
-            std::vector<std::string> tokens;
-            Utilities::String::tokenize(it->substr(spos+1, epos-spos-1), tokens, ",");
-            
-            for (int i = 0; i < tokens.size(); ++i) {
-                if (tokens[i] == "*")
-                    expd++;
-                else if (expd == 0)
-                    indices.push_back(atoi(tokens[i].c_str()));
-                else
-                    throw InvalidInputError("species descriptor", descriptor)
-                        << "Star token can only be followed by another star token. \n"
-                        << "    " << *it << " <--";
-            }
-            
-            gsName = it->substr(0, spos);
+            if (it->substr(spos+1, epos-spos-1)
+                ->find_first_not_of("0123456789,*") == std::string::npos) {
+                
+                // species name represents an internal energy level or a set of levels
+                std::vector<std::string> tokens;
+                Utilities::String::tokenize(it->substr(spos+1, epos-spos-1), tokens, ",");
+                
+                for (int i = 0; i < tokens.size(); ++i) {
+                    if (tokens[i] == "*")
+                        expd++;
+                    else if (expd == 0)
+                        indices.push_back(atoi(tokens[i].c_str()));
+                    else
+                        throw InvalidInputError("species descriptor", descriptor)
+                            << "A star token can only be followed by another star token. \n"
+                            << "    " << *it << " <--";
+                }
+                gsName = it->substr(0, spos);
+                
+            } else
+                gsName = *it;
             
         } else {
             gsName = *it;
