@@ -45,6 +45,7 @@ public:
         m_ns = m_mixture.nSpecies();
         m_nr = m_mixture.nReactions();
         mp_hf = new double [m_ns];
+        mp_h = new double [m_ns];
         mp_rate = new double [m_nr];
         mp_delta = new double [m_nr];
         for(int i=0; i<m_nr; ++i) {
@@ -55,6 +56,7 @@ public:
 
     ~OmegaSEf() {
         delete [] mp_hf;
+        delete [] mp_h;
         delete [] mp_rate;
         delete [] mp_delta;
     };
@@ -75,7 +77,7 @@ public:
     double source()
     {
         // Get Formation enthalpy
-        m_mixture.speciesHOverRT(NULL, NULL, NULL, NULL, NULL, mp_hf);
+        m_mixture.speciesHOverRT(mp_h, NULL, NULL, NULL, NULL, mp_hf);
 
         // Get reaction enthalpies
         std::fill(mp_delta, mp_delta+m_nr, 0.0);
@@ -100,6 +102,7 @@ private:
     int m_nr;
     std::vector<int> m_rId;
     double* mp_hf;
+    double* mp_h;
     double* mp_rate;
     double* mp_delta;
 };

@@ -28,9 +28,13 @@
 #include "StateModel.h"
 #include "Thermodynamics.h"
 #include "Transport.h"
+#include "AutoRegistration.h"
 
 namespace Mutation {
     namespace Thermodynamics {
+
+using namespace Mutation::Transfer;
+using namespace Mutation::Utilities::Config;
 
 /**
  * @ingroup statemodels
@@ -118,6 +122,20 @@ public:
         // Compute the species mole fractions
         for (int i = 0; i < ns; ++i)
             mp_X[i] /= conc;
+    }
+
+    void initializeTransferModel(Mutation::Mixture& mix)
+    {
+        typedef Factory<TransferModel> Factory;
+
+        try {
+            // Radiative terms
+            addTransferTerm(0, Factory::create("OmegaSEf", mix));
+
+        } catch (Error& e) {
+            e << "\nWas trying to load a energy transfer model.";
+            throw;
+        }
     }
 
     void getTemperatures(double* const p_T) const {

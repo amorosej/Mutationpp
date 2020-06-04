@@ -141,6 +141,9 @@ public:
             addTransferTerm(1, Factory::create("OmegaCV", mix));
             addTransferTerm(1, Factory::create("OmegaCElec", mix));
 
+            // Radiative terms
+            addTransferTerm(0, Factory::create("OmegaSEf", mix));
+
             // Terms only included when electrons are present
             if (m_thermo.hasElectrons()) {
                 addTransferTerm(1, Factory::create("OmegaET", mix));
