@@ -38,24 +38,30 @@ namespace Mutation {
 //==============================================================================
     
 // Simple macro to create a temperature selector type
-#define TEMPERATURE_SELECTOR(__NAME__,__T__)\
+#define TEMPERATURE_SELECTOR(__NAME__,__T__,__K__)\
 class __NAME__\
 {\
 public:\
     inline double getT(const Thermodynamics::StateModel* const state) const {\
         return ( __T__ );\
     }\
+    inline double lnKeqCorrFac(const Thermodynamics::StateModel* const state) const {\
+        return ( __K__ );\
+    }\
 };
 
 /// Temperature selector which returns the current translational temperature
-TEMPERATURE_SELECTOR(TSelector, state->T())
+TEMPERATURE_SELECTOR(TSelector, state->T(), 0.0)
 
 /// Temperature selector which returns the current electron temperature
-//TEMPERATURE_SELECTOR(TeSelector, std::min(state->Te(), 10000.0))
-TEMPERATURE_SELECTOR(TeSelector, state->Te())
+TEMPERATURE_SELECTOR(TeSelector, state->Te(), 0.0)
 
 /// Temperature selector which returns the current value of sqrt(T*Tv)
-TEMPERATURE_SELECTOR(ParkSelector, std::sqrt(state->T()*state->Tv()))
+TEMPERATURE_SELECTOR(ParkSelector, std::sqrt(state->T()*state->Tv()), 0.0)
+
+/// Temperature selector for heavy-particle impact ion recombination
+/// the purpose of getKeqCorrFac() is to compute consistent backward rates 
+TEMPERATURE_SELECTOR(IRhSelector, state->T(), 1.5*(std::log(state->T())-std::log(state->Te())) )
 
 #undef TEMPERATURE_SELECTOR
 
