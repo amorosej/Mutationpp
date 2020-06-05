@@ -109,7 +109,7 @@ SpeciesListDescriptor::SpeciesListDescriptor(std::string descriptor)
             size_t epos = it->find(')', spos);
             
             if (it->substr(spos+1, epos-spos-1)
-                ->find_first_not_of("0123456789,*") == std::string::npos) {
+                .find_first_not_of("0123456789,*") == std::string::npos) {
                 
                 // species name represents an internal energy level or a set of levels
                 std::vector<std::string> tokens;
@@ -156,7 +156,8 @@ SpeciesListDescriptor::SpeciesListDescriptor(std::string descriptor)
     levelMap::const_iterator rit2;
     std::string gsName;
     
-    cout << "map ------ " << endl; // Debug ------
+    /* Test
+    cout << "map ------ " << endl;
     for (rit1 = m_expand_states.begin() ; rit1 != m_expand_states.end(); ++rit1) {
         cout << rit1->first.groundStateName() << " indices:";
         for (int i = 0; i < rit1->first.indices().size(); ++i)
@@ -164,8 +165,9 @@ SpeciesListDescriptor::SpeciesListDescriptor(std::string descriptor)
         cout << "  exp = " << rit1->second << endl;
         cout << endl;
     }
-    rit1 = m_expand_states.end(); // ------ Debug
-    
+    rit1 = m_expand_states.end();
+    */
+     
     rit1--;
     while (rit1 != m_expand_states.begin()) {
         
@@ -199,15 +201,16 @@ SpeciesListDescriptor::SpeciesListDescriptor(std::string descriptor)
         rit1--;
     }
     
-    cout << "final map ----------- " << endl; // Debug ------
+    /* Test
+    cout << "final map ----------- " << endl;
     for (rit1 = m_expand_states.begin() ; rit1 != m_expand_states.end(); ++rit1) {
         cout << rit1->first.groundStateName() << " indices:";
         for (int i = 0; i < rit1->first.indices().size(); ++i)
             cout << " " << rit1->first.indices()[i];
         cout << "  exp = " << rit1->second << endl;
-        cout << endl; // ------ Debug
+        cout << endl;
     }
-    
+    */ 
 }
 
 //==============================================================================

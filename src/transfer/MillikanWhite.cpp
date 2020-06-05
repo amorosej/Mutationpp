@@ -78,11 +78,17 @@ MillikanWhiteVibrator::MillikanWhiteVibrator(
             
         // Use a and b data from data file or use the defaults if the pair
         // is not present in the file
-        if ((partner_iter = node.findTagWithAttribute(
-            "partner", "species", partner.name())) != node.end()) {
+        partner_iter = node.findTagWithAttribute(
+            "partner", "species", partner.name());
+        if (partner_iter == node.end())
+            partner_iter = node.findTagWithAttribute(
+                "partner", "species", partner.groundStateName());
+        if (partner_iter != node.end()) {
             // Get a, b from parnter node
             partner_iter->getAttribute("a", a, "must provide constant a!");
             partner_iter->getAttribute("b", b, "must provide constant b!");
+            /* std::cout << name << " " << partner.name() << " "
+                << a << " " << b << std::endl; */
             
             // Add Millikan-White data for collision pair
             m_partners.push_back(MillikanWhitePartner(a, b, mu));
@@ -170,7 +176,7 @@ double MillikanWhiteVibrator::loadThetaV(
                             level_it->findTag("vibrational_temperature");
                         if (tvib_it != level_it->end()) {
                             double thetav = atof(String::trim(tvib_it->text()).c_str());
-                            std::cout << name << "  Tvib = " << thetav; // debug
+                            //std::cout << name << " Tvib = " << thetav << std::endl;
                             return thetav;
                         } else
                             break;
@@ -187,6 +193,7 @@ double MillikanWhiteVibrator::loadThetaV(
     std::stringstream ss(iter->text());
     double thetav; ss >> thetav;
 
+    //std::cout << name << " Tvib = " << thetav << std::endl;
     return thetav;
 }
 

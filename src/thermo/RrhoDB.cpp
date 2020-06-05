@@ -602,11 +602,6 @@ protected:
                 if (species()[i].levelType() >= ROTATIONAL)
                     indices.push_back(species()[i].rotLevel());
                 
-                cout << endl << "indices:"; // Debug --------
-                for (int i = 0; i < indices.size(); ++i)
-                    cout << " " << indices[i];
-                std::cout << endl; // ------ debug
-                
                 rrhos.push_back(ParticleRRHO(*spec_it, indices));
                 
                 // Another way to do it (needs to move definition of "energyLevel" to Species.h):

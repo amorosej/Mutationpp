@@ -32,8 +32,6 @@
 
 #include <cassert>
 #include <iostream>
-using std::cout; // debug
-using std::endl; // debug
 
 using namespace Mutation::Utilities;
 
@@ -185,8 +183,8 @@ ParticleRRHO::ParticleRRHO(const IO::XmlElement& xml_element,
                     m_hform += RU*temperature*1.4387;
                     m_electronic_energies[0].first *= degeneracy;
                     
-                    std::cout << "  degeneracy = " << degeneracy; // debug
-                    std::cout << " energy = " << temperature << endl; // debug
+                    //std::cout << " degeneracy = " << degeneracy;
+                    //std::cout << " energy = " << temperature << endl;
                     
                     if (i < 1) {
                         IO::XmlElement::const_iterator t_it = 
@@ -218,9 +216,9 @@ ParticleRRHO::ParticleRRHO(const IO::XmlElement& xml_element,
             
     }
     
-    for (size_t i = 0; i < m_vibrational_energies.size(); ++i)
-        std::cout << "Tvib = " << m_vibrational_energies[i] << endl; // debug
-    std::cout << "Trot = " << m_rotational_t << endl; // debug
+    //for (size_t i = 0; i < m_vibrational_energies.size(); ++i)
+    //    std::cout << "Tvib = " << m_vibrational_energies[i] << endl;
+    //std::cout << "Trot = " << m_rotational_t << endl;
     
 }
 
