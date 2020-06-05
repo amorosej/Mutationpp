@@ -88,7 +88,10 @@ Species::Species(const Species& to_copy)
       m_charge(to_copy.m_charge),
       m_phase(to_copy.m_phase),
       m_type(to_copy.m_type),
+      m_levelType(to_copy.m_levelType),
       m_level(to_copy.m_level),
+      m_vibLevel(to_copy.m_vibLevel),
+      m_rotLevel(to_copy.m_rotLevel),
       m_stoichiometry(to_copy.m_stoichiometry)
 { }
 
@@ -101,11 +104,55 @@ Species::Species(const Species& to_copy, const size_t level) :
     m_charge(to_copy.m_charge),
     m_phase(to_copy.m_phase),
     m_type(to_copy.m_type),
+    m_levelType(ELECTRONIC),
     m_level(level),
+    m_vibLevel(0),
+    m_rotLevel(0),
     m_stoichiometry(to_copy.m_stoichiometry)
 { 
     stringstream ss;
     ss << "(" << m_level << ")";
+    m_name += ss.str();
+}
+
+//==============================================================================
+
+Species::Species(const Species& to_copy, size_t level, size_t vlevel) :
+    m_name(to_copy.m_name),
+    m_ground_state_name(to_copy.m_name),
+    m_mw(to_copy.m_mw),
+    m_charge(to_copy.m_charge),
+    m_phase(to_copy.m_phase),
+    m_type(to_copy.m_type),
+    m_levelType(VIBRATIONAL),
+    m_level(level),
+    m_vibLevel(vlevel),
+    m_rotLevel(0),
+    m_stoichiometry(to_copy.m_stoichiometry)
+{ 
+    stringstream ss;
+    ss << "(" << m_level << "," << m_vibLevel << ")";
+    m_name += ss.str();
+}
+
+//==============================================================================
+
+Species::Species(
+    const Species& to_copy, size_t level, size_t vlevel, size_t rlevel) :
+    m_name(to_copy.m_name),
+    m_ground_state_name(to_copy.m_name),
+    m_mw(to_copy.m_mw),
+    m_charge(to_copy.m_charge),
+    m_phase(to_copy.m_phase),
+    m_type(to_copy.m_type),
+    m_levelType(ROTATIONAL),
+    m_level(level),
+    m_vibLevel(vlevel),
+    m_rotLevel(rlevel),
+    m_stoichiometry(to_copy.m_stoichiometry)
+{ 
+    stringstream ss;
+    ss << "(" << m_level << "," << m_vibLevel << "," << m_rotLevel << ")";
     m_name += ss.str();
 }
 
@@ -119,7 +166,10 @@ Species::Species(
     m_charge(0),
     m_phase(phase),
     m_type(ATOM),
-    m_level(0)
+    m_levelType(NONE),
+    m_level(0),
+    m_vibLevel(0),
+    m_rotLevel(0)
 {
     // Parse the stoichiometry from the name
     SpeciesNameFSM sm;
@@ -147,7 +197,10 @@ Species::Species(
     m_charge(0),
     m_phase(phase),
     m_type(ATOM),
+    m_levelType(NONE),
     m_level(0),
+    m_vibLevel(0),
+    m_rotLevel(0),
     m_stoichiometry(stoichiometry)
 {
     initDataFromStoichiometry();
@@ -159,7 +212,10 @@ Species::Species(const Mutation::Utilities::IO::XmlElement& xml_element) :
     m_mw(0.0),
     m_charge(0),
     m_type(ATOM),
-    m_level(0)
+    m_levelType(NONE),
+    m_level(0),
+    m_vibLevel(0),
+    m_rotLevel(0)
 {
     // Species name
     xml_element.getAttribute("name", m_name,
@@ -247,7 +303,10 @@ void swap(Species& s1, Species& s2)
     std::swap(s1.m_charge, s2.m_charge);
     std::swap(s1.m_phase, s2.m_phase);
     std::swap(s1.m_type, s2.m_type);
+    std::swap(s1.m_levelType, s2.m_levelType);
     std::swap(s1.m_level, s2.m_level);
+    std::swap(s1.m_vibLevel, s2.m_vibLevel);
+    std::swap(s1.m_rotLevel, s2.m_rotLevel);
     std::swap(s1.m_stoichiometry, s2.m_stoichiometry);
 }
 

@@ -84,7 +84,8 @@ public:
      */
     MillikanWhiteVibrator(
         const Mutation::Utilities::IO::XmlElement& node,
-        const Mutation::Thermodynamics::Thermodynamics& thermo);
+        const Mutation::Thermodynamics::Thermodynamics& thermo,
+        const std::string& name);
     
     /**
      * Use default data for all collision pairs with this vibrator.
@@ -124,7 +125,9 @@ private:
     /**
      * Finds the characteristic vibrational temperature for this vibrator.
      */
-    static double loadThetaV(const std::string& name);
+    static double loadThetaV(
+        const std::string& name,
+        const Mutation::Thermodynamics::Thermodynamics& thermo);
 
     std::vector<MillikanWhitePartner> m_partners;
     double m_omegav;

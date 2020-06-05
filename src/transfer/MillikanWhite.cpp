@@ -45,20 +45,23 @@ namespace Mutation {
 //==============================================================================
 
 MillikanWhiteVibrator::MillikanWhiteVibrator(
-    const XmlElement& node, const class Thermodynamics& thermo)
+    const XmlElement& node, const class Thermodynamics& thermo,
+    const std::string& name)
 {
     assert(node.tag() == "vibrator");
-        
-    // Get the name of this species
-    std::string name;
-    node.getAttribute("species", name, "must provide species name!");
+    
+    const Species& vibrator = thermo.species(name);
+    
+    // Check that the name of this species matches the node data.
+    std::string nodeName;
+    node.getAttribute("species", nodeName, "must provide species name!");
+    assert(nodeName == vibrator.groundStateName());
+    
     m_index  = thermo.speciesIndex(name);
-    m_thetav = loadThetaV(name);
+    m_thetav = loadThetaV(name, thermo);
     
     // Get the limiting cross-section if available
     node.getAttribute("omegav", m_omegav, 3.0E-21);
-    
-    const Species& vibrator = thermo.species(name);
     
     // Loop over each heavy species in thermo
     int offset = (thermo.hasElectrons() ? 1 : 0);
@@ -75,11 +78,17 @@ MillikanWhiteVibrator::MillikanWhiteVibrator(
             
         // Use a and b data from data file or use the defaults if the pair
         // is not present in the file
-        if ((partner_iter = node.findTagWithAttribute(
-            "partner", "species", partner.name())) != node.end()) {
+        partner_iter = node.findTagWithAttribute(
+            "partner", "species", partner.name());
+        if (partner_iter == node.end())
+            partner_iter = node.findTagWithAttribute(
+                "partner", "species", partner.groundStateName());
+        if (partner_iter != node.end()) {
             // Get a, b from parnter node
             partner_iter->getAttribute("a", a, "must provide constant a!");
             partner_iter->getAttribute("b", b, "must provide constant b!");
+            /* std::cout << name << " " << partner.name() << " "
+                << a << " " << b << std::endl; */
             
             // Add Millikan-White data for collision pair
             m_partners.push_back(MillikanWhitePartner(a, b, mu));
@@ -102,7 +111,7 @@ MillikanWhiteVibrator::MillikanWhiteVibrator(
     const std::string& name, const class Thermodynamics& thermo)
     : m_omegav(3.0E-21),
       m_index(thermo.speciesIndex(name)),
-      m_thetav(loadThetaV(name))
+      m_thetav(loadThetaV(name, thermo))
 {
     // Rely on thetav for all partners so make sure it was found
     if (m_thetav < 0.0) {
@@ -132,15 +141,18 @@ MillikanWhiteVibrator::MillikanWhiteVibrator(
 
 //==============================================================================
 
-double MillikanWhiteVibrator::loadThetaV(const std::string& name)
+double MillikanWhiteVibrator::loadThetaV(
+    const std::string& name, const class Thermodynamics& thermo)
 {
     // Get the species.xml path on this computer.
     std::string filename = databaseFileName("species.xml", "thermo");
-
+    
+    const Species& vibrator = thermo.species(name);
+    
     // Now look for the species
     XmlDocument doc(filename);
     XmlElement::const_iterator iter = doc.root().findTagWithAttribute(
-        "species", "name", name);
+        "species", "name", vibrator.groundStateName());
     if (iter == doc.root().end()) return -1.0;
 
     // Look for the thermodynamic data
@@ -149,12 +161,39 @@ double MillikanWhiteVibrator::loadThetaV(const std::string& name)
     if (thermo_iter == iter->end()) return -1.0;
 
     // Look for the vibrational temperature data
+    if (vibrator.levelType() == ELECTRONIC) {
+        // Look for the electronic level data
+        iter = thermo_iter->findTag("electronic_levels");
+        if (iter != thermo_iter->end()) {
+            XmlElement::const_iterator level_it = iter->begin();
+            size_t level = 0;
+            for ( ; level_it != iter->end(); ++level_it) {
+                if (level_it->tag() == "level") {
+                    if (level == vibrator.level()) {
+                        // Look for a level-specific vibrational temperature ;
+                        // if not found, use the temperature of the global species.
+                        IO::XmlElement::const_iterator tvib_it = 
+                            level_it->findTag("vibrational_temperature");
+                        if (tvib_it != level_it->end()) {
+                            double thetav = atof(String::trim(tvib_it->text()).c_str());
+                            //std::cout << name << " Tvib = " << thetav << std::endl;
+                            return thetav;
+                        } else
+                            break;
+                    }
+                    level++;
+                }
+            }
+        }
+    }
+    
     iter = thermo_iter->findTag("vibrational_temperatures");
     if (iter == thermo_iter->end()) return -1.0;
 
     std::stringstream ss(iter->text());
     double thetav; ss >> thetav;
 
+    //std::cout << name << " Tvib = " << thetav << std::endl;
     return thetav;
 }
 
@@ -181,13 +220,17 @@ MillikanWhite::MillikanWhite(const class Thermodynamics& thermo)
         const Species& species = thermo.species(i+offset);
         
         // If this molecule can vibrate, add it to the list
-        if (species.type() == MOLECULE) {
+        if (species.type() == MOLECULE && species.levelType() < VIBRATIONAL) {
             // If vibrator is not in in VT.xml take the characteristic vibrational
             // temperature from species.xml
             if ((iter = root.findTagWithAttribute(
                 "vibrator", "species", species.name())) != root.end())
                 m_vibrators.push_back(
-                    MillikanWhiteVibrator(*iter, thermo));
+                    MillikanWhiteVibrator(*iter, thermo, species.name()));
+            else if ((iter = root.findTagWithAttribute(
+                "vibrator", "species", species.groundStateName())) != root.end())
+                m_vibrators.push_back(
+                    MillikanWhiteVibrator(*iter, thermo, species.name()));
             else
                 m_vibrators.push_back(
                     MillikanWhiteVibrator(species.name(), thermo));

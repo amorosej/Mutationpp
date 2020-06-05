@@ -513,9 +513,58 @@ protected:
                 continue;
             
             Species& ground_state = species.back();
-            ParticleRRHO rrho(*rrho_iter);
-            for (size_t i = 0; i < rrho.nElectronicLevels(); ++i)
-                species.push_back(Species(ground_state, i));
+            
+            IO::XmlElement::const_iterator iter1 = rrho_iter->findTag("electronic_levels");
+            if (iter1 != rrho_iter->end()) {
+                
+                IO::XmlElement::const_iterator eLevel_it = iter1->begin();
+                size_t nelec = 0;
+                // loop over electronic levels
+                for ( ; eLevel_it != iter1->end(); ++eLevel_it) {
+                    
+                    if (eLevel_it->tag() == "level") {
+                        species.push_back(Species(ground_state, nelec));
+                        
+                        // look for vibrational levels
+                        IO::XmlElement::const_iterator iter2 = eLevel_it->findTag("vibrational_levels");
+                        if (iter2 != eLevel_it->end()) {
+                            
+                            IO::XmlElement::const_iterator vLevel_it = iter2->begin();
+                            size_t nvib = 0;
+                            //loop over vibrational levels
+                            for ( ; vLevel_it != iter2->end(); ++vLevel_it) {
+                                
+                                if (vLevel_it->tag() == "level") {
+                                    species.push_back(Species(ground_state, nelec, nvib));
+                                    
+                                    // look for rotational levels
+                                    IO::XmlElement::const_iterator iter3 = vLevel_it->findTag("rotational_levels");
+                                    if (iter3 != vLevel_it->end()) {
+                                        
+                                        IO::XmlElement::const_iterator rLevel_it = iter3->begin();
+                                        size_t nrot = 0;
+                                        //loop over rotational levels
+                                        for ( ; rLevel_it != iter3->end(); ++rLevel_it) {
+                                            if (rLevel_it->tag() == "level") {
+                                                species.push_back(Species(ground_state, nelec, nvib, nrot));
+                                                nrot++;
+                                            }
+                                        } // end loop over rotational levels
+                                        
+                                    }
+                                    nvib++;
+                                }
+                                
+                            } // end loop over vibrational levels
+                            
+                        }
+                        nelec++;
+                    }
+                    
+                } // end loop over electronic levels
+                
+            }
+            
         }
     }
     
@@ -531,7 +580,6 @@ protected:
         IO::XmlDocument species_doc(databaseFileName("species.xml", "thermo"));
         
         vector<ParticleRRHO> rrhos;
-        map<std::string, const ParticleRRHO*> to_expand;
         
         for (int i = 0; i < m_ns; ++i) {
             if (species()[i].name() == species()[i].groundStateName()) {
@@ -540,26 +588,29 @@ protected:
                         findTagWithAttribute("thermodynamics", "type", "RRHO")));
             }
             else {
-                const ParticleRRHO* p_rrho = to_expand[species()[i].groundStateName()];
-                if (p_rrho == NULL) {
-                    p_rrho = new ParticleRRHO(
-                        *(species_doc.root().findTagWithAttribute(
-                            "species", "name", species()[i].groundStateName())->
-                                findTagWithAttribute("thermodynamics", "type", "RRHO")));
-                    to_expand[species()[i].groundStateName()] = p_rrho;
-                }
                 
-                rrhos.push_back(ParticleRRHO(*p_rrho, species()[i].level()));
+                IO::XmlElement::const_iterator spec_it = 
+                    species_doc.root().findTagWithAttribute(
+                        "species", "name", species()[i].groundStateName())->
+                            findTagWithAttribute("thermodynamics", "type", "RRHO");
+                
+                std::vector<size_t> indices;
+                if (species()[i].levelType() >= ELECTRONIC)
+                    indices.push_back(species()[i].level());
+                if (species()[i].levelType() >= VIBRATIONAL)
+                    indices.push_back(species()[i].vibLevel());
+                if (species()[i].levelType() >= ROTATIONAL)
+                    indices.push_back(species()[i].rotLevel());
+                
+                rrhos.push_back(ParticleRRHO(*spec_it, indices));
+                
+                // Another way to do it (needs to move definition of "energyLevel" to Species.h):
+                // energyLevel level(species()[i]);
+                // rrhos.push_back( ParticleRRHO(*spec_it, level.indices()) );
             }
         }
         
-        map<std::string, const ParticleRRHO*>::iterator iter =
-            to_expand.begin();
-        while (iter != to_expand.end()) {
-            delete iter->second;
-            iter++;
-        }
-
+        
         // Determine the number and indices of the atoms and molecules
         vector<int> atom_indices;
         vector<int> molecule_indices;
@@ -600,9 +651,13 @@ protected:
             const ParticleRRHO& rrho = rrhos[j];
             int linear = rrho.linearity();
             mp_rot_data[i].linearity  = linear / 2.0;
-            mp_rot_data[i].ln_omega_t = 
-                std::log(rrho.rotationalTemperature()) + 2.0 / linear *
-                std::log(rrho.stericFactor());
+            if (linear == 0) {
+                mp_rot_data[i].ln_omega_t = 0.0;
+            } else {
+                mp_rot_data[i].ln_omega_t = 
+                    std::log(rrho.rotationalTemperature()) + 2.0 / linear *
+                    std::log(rrho.stericFactor());
+            }
         )
         
         // Store the vibrational temperatures of all the molecules in a compact

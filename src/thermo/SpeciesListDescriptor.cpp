@@ -29,6 +29,9 @@
 #include "Species.h"
 #include "Utilities.h"
 
+using std::cout;
+using std::endl;
+
 #include <iostream>
 #include <iterator>
 using namespace std;
@@ -87,14 +90,127 @@ SpeciesListDescriptor::SpeciesListDescriptor(std::string descriptor)
     // Separate out the species names
     separateSpeciesNames(descriptor);
     
-    // Check on any species whose excited electronic states should be expanded
-    for (int i = 0; i < m_species_names.size(); ++i) {
-        const size_t size = m_species_names[i].size();
-        if (size > 3 && m_species_names[i].substr(size-3,3) == "(*)") {
-            m_species_names[i] = m_species_names[i].substr(0, size-3);
-            m_expand_states.insert(m_species_names[i]);
+    
+    
+    // Check on any species whose excited states should be expanded
+    std::set<std::string> gsNames;
+    std::vector<std::string>::iterator it = m_species_names.begin();
+    
+    while (it != m_species_names.end()) {
+        
+        std::string gsName;
+        std::vector<size_t> indices;
+        int expd = 0;
+        
+        size_t spos = it->find('(');
+        
+        if (spos != std::string::npos) {
+            
+            size_t epos = it->find(')', spos);
+            
+            if (it->substr(spos+1, epos-spos-1)
+                .find_first_not_of("0123456789,*") == std::string::npos) {
+                
+                // species name represents an internal energy level or a set of levels
+                std::vector<std::string> tokens;
+                Utilities::String::tokenize(it->substr(spos+1, epos-spos-1), tokens, ",");
+                
+                for (int i = 0; i < tokens.size(); ++i) {
+                    if (tokens[i] == "*")
+                        expd++;
+                    else if (expd == 0)
+                        indices.push_back(atoi(tokens[i].c_str()));
+                    else
+                        throw InvalidInputError("species descriptor", descriptor)
+                            << "A star token can only be followed by another star token. \n"
+                            << "    " << *it << " <--";
+                }
+                gsName = it->substr(0, spos);
+                
+            } else
+                gsName = *it;
+            
+        } else {
+            gsName = *it;
         }
+        
+        // insert species into the map with its state expansion indicator
+        energyLevel key(gsName, indices);
+        std::pair<levelMap::iterator, bool> ret;
+        ret = m_expand_states.insert( std::pair<energyLevel, int>(key, expd) );
+        if (!ret.second)
+            ret.first->second = std::max(ret.first->second, expd);
+        
+        *it = gsName;
+        if (gsNames.count(gsName) > 0)
+            (it = m_species_names.erase(it))--;
+        else
+            gsNames.insert(gsName);
+        
+        it++;
     }
+    
+    
+    // look for duplicate or conflicting definitions of excited species
+    levelMap::const_iterator rit1 = m_expand_states.end();
+    levelMap::const_iterator rit2;
+    std::string gsName;
+    
+    /* Test
+    cout << "map ------ " << endl;
+    for (rit1 = m_expand_states.begin() ; rit1 != m_expand_states.end(); ++rit1) {
+        cout << rit1->first.groundStateName() << " indices:";
+        for (int i = 0; i < rit1->first.indices().size(); ++i)
+            cout << " " << rit1->first.indices()[i];
+        cout << "  exp = " << rit1->second << endl;
+        cout << endl;
+    }
+    rit1 = m_expand_states.end();
+    */
+     
+    rit1--;
+    while (rit1 != m_expand_states.begin()) {
+        
+        (rit2 = rit1)--;
+        gsName = rit1->first.groundStateName();
+        
+        while (rit2->first.groundStateName() == gsName) {
+            
+            size_t nsub = rit2->first.indices().size();
+            std::vector<size_t> subind(rit1->first.indices().begin(),
+                                        rit1->first.indices().begin()+nsub);
+            
+            if (subind == rit2->first.indices()) {
+                if ( rit2->second == (rit1->first.indices().size()-nsub) && rit1->second == 0 ) {
+                    // redundant definition
+                    rit1 = m_expand_states.erase(rit1);
+                    break;
+                } else
+                    // conflicting definition
+                    throw InvalidInputError("species descriptor", descriptor)
+                        << "Conflicting definitions of excited states: "
+                        << rit1->first.name().append(rit1->second, '*')
+                        << " <--> " << rit2->first.name().append(rit2->second, '*');
+            }
+            
+            if (rit2 == m_expand_states.begin())
+                break;
+            rit2--;
+        }
+        
+        rit1--;
+    }
+    
+    /* Test
+    cout << "final map ----------- " << endl;
+    for (rit1 = m_expand_states.begin() ; rit1 != m_expand_states.end(); ++rit1) {
+        cout << rit1->first.groundStateName() << " indices:";
+        for (int i = 0; i < rit1->first.indices().size(); ++i)
+            cout << " " << rit1->first.indices()[i];
+        cout << "  exp = " << rit1->second << endl;
+        cout << endl;
+    }
+    */ 
 }
 
 //==============================================================================
@@ -162,15 +278,42 @@ bool SpeciesListDescriptor::matches(const Species& species) const
     // Check if this species is present in the explicit list (includes excited
     // state species which were implicitly defined using the '*' character)
     for (int i = 0; i < m_species_names.size(); ++i) {
+        
         const std::string& name = m_species_names[i];
-        bool expand = (m_expand_states.count(name) == 0 ? false : true);
         
-        if (species.name() == name)
-            return !expand;
-        
-        if (species.groundStateName() == name)
-            return expand;
+        if (species.groundStateName() == name) {
+            
+            levelMap::const_iterator it;
+            std::vector<size_t> indices;
+            
+            indices = energyLevel(species).indices();       
+            
+            for (int j = 0; j < species.levelType(); ++j) {
+                
+                energyLevel key(species.groundStateName(), indices);
+                it = m_expand_states.find(key);
+                
+                if ( (it != m_expand_states.end()) && (it->second == j) )
+                    return true;
+                
+                indices.pop_back();
+            }
+            
+            energyLevel key(species.groundStateName(), indices);
+            it = m_expand_states.find(key);
+            
+            if ( (it != m_expand_states.end()) && 
+                (it->second == species.levelType()) )
+                return true;
+            else
+                return false;
+            
+        }
     }
+    
+    // do not apply implicit rules to excited states species
+    if (species.levelType() != NONE)
+        return false;
     
     // Check if the species is described by an implicit rule
     // Check phase
@@ -223,13 +366,15 @@ void SpeciesListDescriptor::order(
     
     int index = 0;
     std::list<Species>::iterator it;
+    levelMap::const_iterator it1;
     
     // First order all of the species that are explicitly listed
     for (std::size_t i = 0; i < m_species_names.size(); ++i) {
         const std::string& name = m_species_names[i];
         
         // Don't expand name
-        if (m_expand_states.find(name) == m_expand_states.end()) {
+        it1 = m_expand_states.find(energyLevel(name, std::vector<size_t>()));
+        if ( it1 != m_expand_states.end() && it1->second == 0 ) {
             it = std::find_if(input.begin(), input.end(), NameEquals(name));
             
             if (it == input.end())
@@ -248,7 +393,7 @@ void SpeciesListDescriptor::order(
                 it++;
                 it = std::find_if(it, input.end(), GroundStateNameEquals(name));
                 while (it != input.end()) {
-                    if (it->level() < lowest_level->level())
+                    if ( energyLevel(*it) < energyLevel(*lowest_level) )
                         lowest_level = it;
                     it++;
                     it = std::find_if(
@@ -262,6 +407,16 @@ void SpeciesListDescriptor::order(
                     input.begin(), input.end(), GroundStateNameEquals(name));
                 lowest_level = it;
             }
+        }
+    }
+    
+    // Check if any explicitly listed excited state is missing
+    for (it1 = m_expand_states.begin() ; it1 != m_expand_states.end(); ++it1) {
+        if (it1->second == 0) {
+            std::string name = it1->first.name(); 
+            it = std::find_if(ordered_list.begin(), ordered_list.end(), NameEquals(name));
+            if (it == ordered_list.end())
+                missing.push_back(name);
         }
     }
     
