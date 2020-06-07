@@ -266,7 +266,20 @@ void printMixtureInfo(const Mixture& mixture)
         cout << setw(5) << mixture.getDefaultComposition(i) << endl;
     }
 
-    cout << endl;
+     cout << endl;
+     
+     if (mixture.nSgroups() > 0) {
+        cout << "Species groups:" << endl;
+        cout << "---------------" << endl;
+        for (int i = 0; i < mixture.nSgroups(); ++i) {
+            cout.setf(std::ios::left, std::ios::adjustfield);
+            cout << "   " << setw(3) << mixture.sgroupName(i) << ": ";
+            for (int j = 0; j < mixture.sgroup(i).size(); ++j)
+                cout << mixture.speciesName(mixture.sgroup(i)[j]) << "  ";
+            cout << endl;
+        }
+        cout << endl;
+     }
 
     if (nr == 0) return;
 

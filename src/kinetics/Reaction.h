@@ -65,6 +65,7 @@ public:
           m_thirdbody(reaction.m_thirdbody),
           m_conserves(reaction.m_conserves),
           m_thirdbodies(reaction.m_thirdbodies),
+          m_inertBodyGroups(reaction.m_inertBodyGroups),
           m_type(reaction.m_type),
           mp_rate(reaction.mp_rate ? reaction.mp_rate->clone() : NULL)
     { }
@@ -208,6 +209,13 @@ public:
     
     friend void swap(Reaction& left, Reaction& right);
     
+    /**
+     * Returns a vector of (species group name, efficiency as inert body) value pairs.
+     */
+    const std::vector<std::pair<int, double> >& sgroupEfficiencies() const {
+        return m_inertBodyGroups;
+    }
+    
 private:
 
     /**
@@ -267,6 +275,7 @@ private:
     bool m_conserves;
     
     std::vector<std::pair<int, double> > m_thirdbodies;
+    std::vector<std::pair<int, double> > m_inertBodyGroups;
     
     ReactionType m_type;
     RateLaw* mp_rate;

@@ -134,6 +134,13 @@ public:
     }
     
     /**
+     * Gets the list of species groups definitions.
+     */
+    const std::vector<std::pair<std::string, std::string> >& getSgroupsDescriptor() const {
+        return m_sgroups_descriptor;
+    }
+    
+    /**
      * Sets the list of species names.
      */
     void setSpeciesDescriptor(const std::string& descriptor) {
@@ -334,6 +341,8 @@ private:
 private:
 
     std::string m_species_descriptor;
+    
+    std::vector<std::pair<std::string, std::string> > m_sgroups_descriptor;
     
     std::vector<Thermodynamics::Composition> m_compositions;
     int m_default_composition;

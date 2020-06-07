@@ -49,12 +49,14 @@ ThermoDB::ThermoDB(double sst, double ssp)
 
 //==============================================================================
 
-bool ThermoDB::load(const SpeciesListDescriptor& descriptor)
+bool ThermoDB::load(const SpeciesListDescriptor& descriptor,
+    const std::vector<std::pair<std::string, std::string>>& group_descriptor)
 {
     // It is possible that this isn't the first call to load so just make sure
     // species and elements are cleared
     m_species.clear();
     m_elements.clear();
+    m_sgroups.clear();
     
     // Load all possible species from the concrete database type
     std::list<Species> species_list;
@@ -105,6 +107,28 @@ bool ThermoDB::load(const SpeciesListDescriptor& descriptor)
             std::cout << "  " << missing[i] << std::endl;
         return false;
     }
+    
+    // Parse the species groups descriptor and store the valid groups    
+    std::map<std::string, int> species_map;
+    for (int i = 0; i < m_species.size(); ++i)
+        species_map[m_species[i].name()] = i;
+    
+    std::vector<std::string> gspecnames;
+    std::vector<int> gspecindices;
+    std::map<std::string, int>::iterator it;
+    
+    for (int i = 0; i < group_descriptor.size(); ++i) {
+        Utilities::String::tokenize(group_descriptor[i].second, gspecnames, ", ");
+        gspecindices.clear();
+        for (int j = 0; j < gspecnames.size(); ++j) {
+            it = species_map.find(gspecnames[j]);
+            if (it != species_map.end())
+                gspecindices.push_back(it->second);
+        }
+        if (gspecindices.size() > 0)
+            m_sgroups.push_back(Sgroup(group_descriptor[i].first, gspecindices));
+    }
+    
     
     // Finally fill our elements vector with only the elements that are required
     // for the species list

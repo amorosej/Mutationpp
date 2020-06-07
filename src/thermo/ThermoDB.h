@@ -37,6 +37,27 @@
 namespace Mutation {
     namespace Thermodynamics {
 
+class Sgroup
+{
+public:
+    
+    Sgroup(const std::string& name, const std::vector<int>& species)
+        : m_name(name), m_species(species)
+    { }
+    
+    const std::string& name() const {
+        return m_name;
+    }
+    
+    const std::vector<int>& species() const {
+        return m_species;
+    }
+    
+private:    
+    std::string m_name;
+    std::vector<int> m_species;
+};
+
 /**
  * Abstract base class for all thermodynamic databases.  This provides the 
  * construct for self registering thermodynamic database types so that it is 
@@ -70,7 +91,8 @@ public:
      * Loads the species from the database represented by the concrete class
      * which extends this ThermoDB using the given SpeciesListDescriptor.
      */
-    bool load(const SpeciesListDescriptor& descriptor);
+    bool load(const SpeciesListDescriptor& descriptor,
+        const std::vector<std::pair<std::string, std::string> >& group_descriptor);
     
     /**
      * Desctructor.
@@ -89,6 +111,13 @@ public:
      */
     const std::vector<Species>& species() const {
         return m_species;
+    }
+    
+    /**
+     * Returns the species groups list.
+     */
+    const std::vector<Sgroup>& sgroups() const {
+        return m_sgroups;
     }
     
     /**
@@ -275,6 +304,8 @@ private:
     
     std::vector<Element> m_elements;
     std::vector<Species> m_species;
+    
+    std::vector<Sgroup> m_sgroups;
     
 }; // class ThermoDB
 

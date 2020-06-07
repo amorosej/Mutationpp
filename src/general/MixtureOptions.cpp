@@ -137,6 +137,11 @@ void MixtureOptions::loadFromXmlElement(IO::XmlElement& element)
             m_species_descriptor = String::trim(iter->text());
         else if (iter->tag() == "element_compositions")
             loadElementCompositions(*iter);
+        else if (iter->tag() == "group") {
+            std::string groupName;
+            iter->getAttribute("name", groupName, "Species group must have a name !");
+            m_sgroups_descriptor.push_back(std::make_pair(groupName, String::trim(iter->text())));
+        }
     }
 }
 

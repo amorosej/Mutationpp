@@ -45,6 +45,7 @@ namespace Mutation {
 
 Thermodynamics::Thermodynamics(
     const string& species_descriptor,
+    const std::vector<std::pair<std::string, std::string>>& group_descriptor,
     const string& thermo_db,
     const string& state_model )
     : mp_work1(NULL), mp_work2(NULL), mp_wrkcp(NULL), mp_default_composition(NULL),
@@ -57,7 +58,7 @@ Thermodynamics::Thermodynamics(
         e << "\nWas trying to load the thermodynamic database.";
         throw;
     }
-    if (!mp_thermodb->load(species_descriptor)) {
+    if (!mp_thermodb->load(species_descriptor, group_descriptor)) {
         throw InvalidInputError("species list", species_descriptor)
             << "Could not find all required species in the thermodynamic "
             << "database.";
@@ -72,6 +73,10 @@ Thermodynamics::Thermodynamics(
         m_natoms += (species(i).type() == ATOM ? 1 : 0);
         m_nmolecules += (species(i).type() == MOLECULE ? 1 : 0);
     }
+    
+    // Add the species groups to the map
+    for (int i = 0; i < nSgroups(); ++i)
+        m_sgroup_indices[sgroupName(i)] = i;
     
     m_has_electrons = (species(0).type() == ELECTRON);
     
