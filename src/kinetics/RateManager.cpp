@@ -196,7 +196,7 @@ void RateManager::selectRate(
             addRate<FWD, REV>(rxn, reaction);
         }
         
-    } else {
+    } else
         selectRate<NReactionTypes-1>(rxn, reaction);
 }
 
