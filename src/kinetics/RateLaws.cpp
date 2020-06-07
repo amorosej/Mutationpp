@@ -38,16 +38,6 @@ using namespace Mutation::Utilities::IO;
 namespace Mutation {
     namespace Kinetics {
 
-void Arrhenius::setUnits(const XmlElement& node)
-{
-    assert( node.tag() == "arrhenius_units" );
-    std::string a, e;
-    node.getAttribute("A", a);
-    node.getAttribute("E", e);
-    sm_aunits = Units::split(a);
-    sm_eunits = Units::split(e);
-}
-
 std::vector<Units> _default_aunits() {
     std::vector<Units> units;
     units.push_back("mol");
@@ -63,6 +53,19 @@ std::vector<Units> _default_eunits() {
     units.push_back("mol");
     units.push_back("K");
     return units;
+}
+
+
+//==============================================================================
+
+void Arrhenius::setUnits(const XmlElement& node)
+{
+    assert( node.tag() == "arrhenius_units" );
+    std::string a, e;
+    node.getAttribute("A", a);
+    node.getAttribute("E", e);
+    sm_aunits = Units::split(a);
+    sm_eunits = Units::split(e);
 }
 
 std::vector<Units> Arrhenius::sm_aunits = std::vector<Units>();
@@ -105,6 +108,96 @@ Arrhenius::Arrhenius(const XmlElement& node, const int order)
         node.parseError("Arrhenius rate law must define coefficient Ea or T!");
     }
 }
+
+//==============================================================================
+
+void rationalExp::setUnits(const XmlElement& node)
+{
+    assert( node.tag() == "rationalexp_units" );
+    std::string a, e;
+    node.getAttribute("A", a);
+    node.getAttribute("E", e);
+    sm_aunits = Units::split(a);
+    sm_eunits = Units::split(e);
+}
+
+std::vector<Units> rationalExp::sm_aunits = std::vector<Units>();
+std::vector<Units> rationalExp::sm_eunits = std::vector<Units>();
+
+rationalExp::rationalExp(const XmlElement& node, const int order)
+{
+    assert( node.tag() == "rationalexp" );
+    
+    if (sm_aunits.empty())
+        sm_aunits = _default_aunits();
+    if (sm_eunits.empty())
+        sm_eunits = _default_eunits();
+    
+    // Load the temperature exponent (defaults to 0)
+    node.getAttribute("n", m_n, 0.0);
+    
+    // Load the coefficients
+    node.getAttribute("a0", m_a0, 1.0);
+    node.getAttribute("b0", m_b0, 1.0);
+    node.getAttribute("a1", m_a1, 0.0);
+    node.getAttribute("b1", m_b1, 0.0);
+    node.getAttribute("a2", m_a2, 0.0);
+    node.getAttribute("b2", m_b2, 0.0);
+    node.getAttribute("b3", m_b3, 0.0);
+    
+    // Convert to correct units based on the order of the reaction
+    Units A_units = (((sm_aunits[1]^3) / sm_aunits[0])^(order-1)) / sm_aunits[2];
+    m_a0 = (A_units.convertToBase(m_a0));
+    m_a1 = (A_units.convertToBase(m_a1))/(sm_eunits[2].convertToBase(1.0));
+    m_a2 = (A_units.convertToBase(m_a2))/std::pow(sm_eunits[2].convertToBase(1.0), 2.0);
+    m_b1 = m_b1/(sm_eunits[2].convertToBase(1.0));
+    m_b2 = m_b2/std::pow(sm_eunits[2].convertToBase(1.0), 2.0);
+    m_b3 = m_b3/std::pow(sm_eunits[2].convertToBase(1.0), 3.0);
+    
+    // Load the characteristic temperature
+    if (node.hasAttribute("Ea")) {
+        node.getAttribute("Ea", m_temp);
+        // Convert to J/mol and divide by Ru to get characteristic temp
+        m_temp = (sm_eunits[0]/sm_eunits[1]).convertToBase(m_temp) / RU;
+    } else if (node.hasAttribute("T")) {
+        node.getAttribute("T", m_temp);
+        // Convert to K
+        m_temp = sm_eunits[2].convertToBase(m_temp);
+    } else {
+        node.parseError("rationalExp rate law must define coefficient Ea or T!");
+    }
+}
+
+//==============================================================================
+
+void constRate::setUnits(const XmlElement& node)
+{
+    assert( node.tag() == "constRate_units" );
+    std::string a;
+    node.getAttribute("A", a);
+    sm_aunits = Units::split(a);
+}
+
+std::vector<Units> constRate::sm_aunits = std::vector<Units>();
+
+constRate::constRate(const XmlElement& node, const int order)
+{
+    assert( node.tag() == "constRate" );
+    
+    if (sm_aunits.empty())
+        sm_aunits = _default_aunits();
+    
+    // Load the pre-exponential factor (must be given)
+    node.getAttribute("A", m_lnA, 
+        "constRate rate law must define coefficient A!");
+    
+    // Convert to correct units based on the order of the reaction and
+    // store the log value
+    Units A_units = (((sm_aunits[1]^3) / sm_aunits[0])^(order-1))/sm_aunits[2];
+    m_lnA = std::log(A_units.convertToBase(m_lnA));
+}
+
+//==============================================================================
 
     } // namespace Kinetics
 } // namespace Mutation

@@ -32,6 +32,8 @@
 #include "Reaction.h"
 #include "StateModel.h"
 
+#include "RateLaws.h"
+
 namespace Mutation {
     namespace Kinetics {
 
@@ -78,44 +80,46 @@ typedef RateLawGroup1T<Arrhenius, ParkSelector> ArrheniusPark;
 
 /**
  * Used to define which rate law groups the forward and reverse rate laws are
- * evaluated in for a given ReactionType value.  The default is an Arrhenius
- * rate law with Tf = Tb = T.
+ * evaluated in for a given ReactionType value.
  */
-template <int Type>
+
+// Selector for one-temperature rate laws. The default is Tf = Tb = T.
+template <int reactionType>
 struct RateSelector {
-    typedef ArrheniusT ForwardGroup;
-    typedef ArrheniusT ReverseGroup;
+    typedef TSelector ForwardGroup;
+    typedef TSelector ReverseGroup;
 };
 
-#define SELECT_RATE_LAWS(__TYPE__,__FORWARD__,__REVERSE__)\
-template <> struct RateSelector<__TYPE__> {\
+
+#define SELECT_RATE_LAWS(__REACTYPE__,__FORWARD__,__REVERSE__)\
+template <> struct RateSelector<__REACTYPE__> {\
     typedef __FORWARD__ ForwardGroup;\
     typedef __REVERSE__ ReverseGroup;\
 };
 
 // Default rate law groups for non (kf(T), kb(T)) reaction types
-SELECT_RATE_LAWS(ASSOCIATIVE_IONIZATION,     ArrheniusT,    ArrheniusTe)
-SELECT_RATE_LAWS(DISSOCIATIVE_RECOMBINATION, ArrheniusTe,   ArrheniusT)
-SELECT_RATE_LAWS(ASSOCIATIVE_DETACHMENT,     ArrheniusT,    ArrheniusTe)
-SELECT_RATE_LAWS(DISSOCIATIVE_ATTACHMENT,    ArrheniusTe,   ArrheniusT)
-SELECT_RATE_LAWS(DISSOCIATION_E,             ArrheniusTe,   ArrheniusTe)
-SELECT_RATE_LAWS(RECOMBINATION_E,            ArrheniusTe,   ArrheniusTe)
-SELECT_RATE_LAWS(DISSOCIATION_M,             ArrheniusPark, ArrheniusT)
-SELECT_RATE_LAWS(RECOMBINATION_M,            ArrheniusT,    ArrheniusPark)
-SELECT_RATE_LAWS(IONIZATION_E,               ArrheniusTe,   ArrheniusT)
-SELECT_RATE_LAWS(ION_RECOMBINATION_E,        ArrheniusT,    ArrheniusTe)
-SELECT_RATE_LAWS(IONIZATION_M,               ArrheniusT,    ArrheniusT)
-SELECT_RATE_LAWS(ION_RECOMBINATION_M,        ArrheniusT,    ArrheniusT)
-SELECT_RATE_LAWS(ELECTRONIC_ATTACHMENT_M,    ArrheniusTe,   ArrheniusT)
-SELECT_RATE_LAWS(ELECTRONIC_DETACHMENT_M,    ArrheniusT,    ArrheniusTe)
-SELECT_RATE_LAWS(ELECTRONIC_ATTACHMENT_E,    ArrheniusTe,   ArrheniusTe)
-SELECT_RATE_LAWS(ELECTRONIC_DETACHMENT_E,    ArrheniusTe,   ArrheniusTe)
-SELECT_RATE_LAWS(EXCHANGE,                   ArrheniusT,    ArrheniusT)
-SELECT_RATE_LAWS(EXCITATION_M,               ArrheniusT,    ArrheniusT)
-SELECT_RATE_LAWS(EXCITATION_E,               ArrheniusTe,   ArrheniusTe)
-SELECT_RATE_LAWS(RADIATIVE_RECOMBINATION,    ArrheniusTe,   ArrheniusT)
-SELECT_RATE_LAWS(RADIATIVE_ATTACHMENT,       ArrheniusTe,   ArrheniusT)
-SELECT_RATE_LAWS(RADIATIVE_ASSOCIATION,      ArrheniusT,    ArrheniusT)
+SELECT_RATE_LAWS(ASSOCIATIVE_IONIZATION,     TSelector,    TeSelector)
+SELECT_RATE_LAWS(DISSOCIATIVE_RECOMBINATION, TeSelector,   TSelector)
+SELECT_RATE_LAWS(ASSOCIATIVE_DETACHMENT,     TSelector,    TeSelector)
+SELECT_RATE_LAWS(DISSOCIATIVE_ATTACHMENT,    TeSelector,   TSelector)
+SELECT_RATE_LAWS(DISSOCIATION_E,             TeSelector,   TeSelector)
+SELECT_RATE_LAWS(RECOMBINATION_E,            TeSelector,   TeSelector)
+SELECT_RATE_LAWS(DISSOCIATION_M,             ParkSelector, TSelector)
+SELECT_RATE_LAWS(RECOMBINATION_M,            TSelector,    ParkSelector)
+SELECT_RATE_LAWS(IONIZATION_E,               TeSelector,   TeSelector)
+SELECT_RATE_LAWS(ION_RECOMBINATION_E,        TeSelector,   TeSelector)
+SELECT_RATE_LAWS(IONIZATION_M,               TSelector,    TSelector)
+SELECT_RATE_LAWS(ION_RECOMBINATION_M,        TSelector,    TSelector)
+SELECT_RATE_LAWS(ELECTRONIC_ATTACHMENT_M,    TeSelector,   TSelector)
+SELECT_RATE_LAWS(ELECTRONIC_DETACHMENT_M,    TSelector,    TeSelector)
+SELECT_RATE_LAWS(ELECTRONIC_ATTACHMENT_E,    TeSelector,   TeSelector)
+SELECT_RATE_LAWS(ELECTRONIC_DETACHMENT_E,    TeSelector,   TeSelector)
+SELECT_RATE_LAWS(EXCHANGE,                   TSelector,    TSelector)
+SELECT_RATE_LAWS(EXCITATION_M,               TSelector,    TSelector)
+SELECT_RATE_LAWS(EXCITATION_E,               TeSelector,   TeSelector)
+SELECT_RATE_LAWS(RADIATIVE_RECOMBINATION,    TeSelector,   TSelector)
+SELECT_RATE_LAWS(RADIATIVE_ATTACHMENT,       TeSelector,   TSelector)
+SELECT_RATE_LAWS(RADIATIVE_ASSOCIATION,      TSelector,    TSelector)
 
 #undef SELECT_RATE_LAWS
 
@@ -157,8 +161,10 @@ void RateManager::addReaction(const size_t rxn, const Reaction& reaction)
     // Get the rate law which is being used in this reaction
     const RateLaw* p_rate = reaction.rateLaw();
     
-    // Arrhenius reactions
-    if (typeid(*p_rate) == typeid(Arrhenius)) {
+    if ( (typeid(*p_rate) == typeid(Arrhenius))
+        || (typeid(*p_rate) == typeid(constRate))
+        || (typeid(*p_rate) == typeid(rationalExp)) ) {
+        // One-temperature-rate-law reactions
         selectRate<MAX_REACTION_TYPES-1>(rxn, reaction);
     } else {
         throw InvalidInputError("rate law", typeid(*p_rate).name())
@@ -172,12 +178,25 @@ template <int NReactionTypes>
 void RateManager::selectRate(
     const size_t rxn, const Reaction& reaction)
 {
-    if (reaction.type() == NReactionTypes)
-        addRate<
-            typename RateSelector<NReactionTypes>::ForwardGroup,
-            typename RateSelector<NReactionTypes>::ReverseGroup>(
-            rxn, reaction);
-    else
+    if (reaction.type() == NReactionTypes) {
+        
+        const RateLaw* p_rate = reaction.rateLaw();
+        
+        if ( (typeid(*p_rate) == typeid(Arrhenius)) ) {
+            typedef RateLawGroup1T<Arrhenius, typename RateSelector<NReactionTypes>::ForwardGroup> FWD;
+            typedef RateLawGroup1T<Arrhenius, typename RateSelector<NReactionTypes>::ReverseGroup> REV;
+            addRate<FWD, REV>(rxn, reaction);
+        } else if (typeid(*p_rate) == typeid(rationalExp)) {
+            typedef RateLawGroup1T<rationalExp, typename RateSelector<NReactionTypes>::ForwardGroup> FWD;
+            typedef RateLawGroup1T<rationalExp, typename RateSelector<NReactionTypes>::ReverseGroup> REV;
+            addRate<FWD, REV>(rxn, reaction);
+        } else if (typeid(*p_rate) == typeid(constRate)) {
+            typedef RateLawGroup1T<constRate, typename RateSelector<NReactionTypes>::ForwardGroup> FWD;
+            typedef RateLawGroup1T<constRate, typename RateSelector<NReactionTypes>::ReverseGroup> REV;
+            addRate<FWD, REV>(rxn, reaction);
+        }
+        
+    } else {
         selectRate<NReactionTypes-1>(rxn, reaction);
 }
 
@@ -185,9 +204,21 @@ template <>
 void RateManager::selectRate<0>(
     const size_t rxn, const Reaction& reaction)
 {
-    addRate<
-        RateSelector<0>::ForwardGroup,
-        RateSelector<0>::ReverseGroup>(rxn, reaction);
+    const RateLaw* p_rate = reaction.rateLaw();
+    
+    if ( (typeid(*p_rate) == typeid(Arrhenius)) ) {
+        typedef RateLawGroup1T<Arrhenius, typename RateSelector<0>::ForwardGroup> FWD;
+        typedef RateLawGroup1T<Arrhenius, typename RateSelector<0>::ReverseGroup> REV;
+        addRate<FWD, REV>(rxn, reaction);
+    } else if (typeid(*p_rate) == typeid(rationalExp)) {
+        typedef RateLawGroup1T<rationalExp, typename RateSelector<0>::ForwardGroup> FWD;
+        typedef RateLawGroup1T<rationalExp, typename RateSelector<0>::ReverseGroup> REV;
+        addRate<FWD, REV>(rxn, reaction);
+    } else if (typeid(*p_rate) == typeid(constRate)) {
+        typedef RateLawGroup1T<constRate, typename RateSelector<0>::ForwardGroup> FWD;
+        typedef RateLawGroup1T<constRate, typename RateSelector<0>::ReverseGroup> REV;
+        addRate<FWD, REV>(rxn, reaction);
+    }
 }
 
 //==============================================================================

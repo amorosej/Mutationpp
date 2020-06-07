@@ -83,6 +83,10 @@ Kinetics::Kinetics(
             addReaction(Reaction(*iter, thermo));
         else if (iter->tag() == "arrhenius_units")
             Arrhenius::setUnits(*iter);
+        else if (iter->tag() == "rationalexp_units")
+            rationalExp::setUnits(*iter);
+        else if (iter->tag() == "constRate_units")
+            constRate::setUnits(*iter);
     }
     
     // Setup the rate manager

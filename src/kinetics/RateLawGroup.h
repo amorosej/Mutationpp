@@ -163,28 +163,7 @@ public:
      * Evaluates all of the rates in the group and stores in the given vector.
      */
     virtual void lnk(
-        const Thermodynamics::StateModel* const p_state, double* const p_lnk)
-    {
-        // Determine the reaction temperature for this group
-        m_t = TSelectorType().getT(p_state);
-
-        // Update only if the temperature has changed
-        //if (std::abs(m_t - m_last_t) > 1.0e-10) {
-            const double lnT  = std::log(m_t);
-            const double invT = 1.0 / m_t;
-
-            for (int i = 0; i < m_rates.size(); ++i) {
-                const std::pair<size_t, RateLawType>& rate = m_rates[i];
-                p_lnk[rate.first] = rate.second.getLnRate(lnT, invT);
-            }
-        //}
-
-        // Save this temperature
-        m_last_t = m_t;
-        
-        // Compute and store the correction factor
-        m_lnKeqCorrFac = TSelectorType().lnKeqCorrFac(p_state);
-    }
+        const Thermodynamics::StateModel* const p_state, double* const p_lnk) { };
 
 private:
 
@@ -192,6 +171,161 @@ private:
     std::vector< std::pair<size_t, RateLawType> > m_rates;
 };
 
+
+
+// Partial specialization of RateLawGroup1T for Arrhenius rate law
+template <typename TSelectorType>
+class RateLawGroup1T <Arrhenius, TSelectorType> : public RateLawGroup
+{
+public:
+
+    /**
+     * Adds a new rate to evaluate with this group.
+     */
+    virtual void addRateCoefficient(
+        const size_t rxn, const RateLaw* const p_rate)
+    {
+        m_rates.push_back(
+            std::make_pair(rxn, dynamic_cast<const Arrhenius&>(*p_rate))
+        );
+    }
+    
+    /**
+     * Evaluates all of the rates in the group and stores in the given vector.
+     */
+    virtual void lnk(
+        const Thermodynamics::StateModel* const p_state, double* const p_lnk)
+    {
+        // Determine the reaction temperature for this group
+        this->m_t = TSelectorType().getT(p_state);
+
+        // Update only if the temperature has changed
+        //if (std::abs(m_t - m_last_t) > 1.0e-10) {
+            const double lnT  = std::log(this->m_t);
+            const double invT = 1.0 / this->m_t;
+
+            for (int i = 0; i < this->m_rates.size(); ++i) {
+                const std::pair<size_t, Arrhenius>& rate = this->m_rates[i];
+                p_lnk[rate.first] = rate.second.getLnRate(lnT, invT);
+            }
+        //}
+        
+        // Save this temperature
+        this->m_last_t = this->m_t;
+        
+        // Compute and store the correction factor
+        this->m_lnKeqCorrFac = TSelectorType().lnKeqCorrFac(p_state);
+    }
+    
+private:
+    
+    /// vector of rates to evaluate
+    std::vector< std::pair<size_t, Arrhenius> > m_rates;
+    
+};
+
+
+// Partial specialization of RateLawGroup1T for rationalExp rate law
+template <typename TSelectorType>
+class RateLawGroup1T <rationalExp, TSelectorType> : public RateLawGroup
+{
+public:
+
+    /**
+     * Adds a new rate to evaluate with this group.
+     */
+    virtual void addRateCoefficient(
+        const size_t rxn, const RateLaw* const p_rate)
+    {
+        m_rates.push_back(
+            std::make_pair(rxn, dynamic_cast<const rationalExp&>(*p_rate))
+        );
+    }
+    
+    /**
+     * Evaluates all of the rates in the group and stores in the given vector.
+     */
+    virtual void lnk(
+        const Thermodynamics::StateModel* const p_state, double* const p_lnk)
+    {
+        // Determine the reaction temperature for this group
+        this->m_t = TSelectorType().getT(p_state);
+
+        // Update only if the temperature has changed
+        //if (std::abs(m_t - m_last_t) > 1.0e-10) {
+            const double lnT  = std::log(this->m_t);
+            const double invT = 1.0 / this->m_t;
+            const double T = this->m_t;
+            const double sqT = std::pow(this->m_t, 2.0);
+
+            for (int i = 0; i < m_rates.size(); ++i) {
+                const std::pair<size_t, rationalExp>& rate = m_rates[i];
+                p_lnk[rate.first] = rate.second.getLnRate(lnT, invT, T, sqT);
+            }
+        //}
+
+        // Save this temperature
+        this->m_last_t = this->m_t;
+        
+        // Compute and store the correction factor
+        this->m_lnKeqCorrFac = TSelectorType().lnKeqCorrFac(p_state);
+    }
+
+private:
+    
+    /// vector of rates to evaluate
+    std::vector< std::pair<size_t, rationalExp> > m_rates;
+    
+};
+
+
+// Partial specialization of RateLawGroup1T for constRate rate law
+template <typename TSelectorType>
+class RateLawGroup1T <constRate, TSelectorType> : public RateLawGroup
+{
+public:
+
+    /**
+     * Adds a new rate to evaluate with this group.
+     */
+    virtual void addRateCoefficient(
+        const size_t rxn, const RateLaw* const p_rate)
+    {
+        m_rates.push_back(
+            std::make_pair(rxn, dynamic_cast<const constRate&>(*p_rate))
+        );
+    }
+    
+    /**
+     * Evaluates all of the rates in the group and stores in the given vector.
+     */
+    virtual void lnk(
+        const Thermodynamics::StateModel* const p_state, double* const p_lnk)
+    {
+        // Determine the reaction temperature for this group
+        this->m_t = TSelectorType().getT(p_state);
+        
+        for (int i = 0; i < this->m_rates.size(); ++i) {
+            const std::pair<size_t, constRate>& rate = this->m_rates[i];
+            p_lnk[rate.first] = rate.second.getLnRate();
+        }
+        
+        // Save this temperature
+        this->m_last_t = this->m_t;
+        
+        // Compute and store the correction factor
+        this->m_lnKeqCorrFac = TSelectorType().lnKeqCorrFac(p_state);
+    }
+    
+private:
+    
+    /// vector of rates to evaluate
+    std::vector< std::pair<size_t, constRate> > m_rates;
+    
+};
+
+
+//==============================================================================
 
 /**
  * Small helper class which provides comparison between two std::type_info

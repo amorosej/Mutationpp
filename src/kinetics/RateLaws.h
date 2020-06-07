@@ -101,6 +101,105 @@ private:
 };
 
 
+/**
+ * Arrhenius-like rate law with a rational pre-exponential term.
+ */
+class rationalExp : public RateLaw
+{
+public:
+
+    static void setUnits(const Mutation::Utilities::IO::XmlElement& node);
+    
+    rationalExp(const Mutation::Utilities::IO::XmlElement& node, const int order);
+    
+    rationalExp(const rationalExp& to_copy)
+        : m_n(to_copy.m_n), m_temp(to_copy.m_temp), 
+          m_a0(to_copy.m_a0), m_a1(to_copy.m_a1), m_a2(to_copy.m_a2),
+          m_b0(to_copy.m_b0), m_b1(to_copy.m_b1), m_b2(to_copy.m_b2), m_b3(to_copy.m_b3)
+    { }
+    
+    virtual ~rationalExp() { };
+    
+    rationalExp* clone() const {
+        return new rationalExp(*this);
+    }
+    
+    inline double getLnRate(const double lnT, const double invT, const double T, const double sqT) const {
+        return (m_n*lnT - m_temp*invT + std::log( (m_a0+m_a1*T+m_a2*sqT)/(m_b0+m_b1*T+m_b2*sqT+m_b3*sqT*T) ));
+    }
+    
+    inline double derivative(const double k, const double invT, const double T, const double sqT) const {
+        return ( k*( invT*(m_n + m_temp*invT) + (m_a1+m_a2*2.0*T)/(m_a0+m_a1*T+m_a2*sqT) - (m_b1+m_b2*2.0*T+m_b3*3.0*sqT)/(m_b0+m_b1*T+m_b2*sqT+m_b3*sqT*T) ) );
+    }
+   
+    double n() const {return m_n;}
+    
+    double T() const {return m_temp;}
+    
+    double a0() const {return m_a0;}
+    
+    double a1() const {return m_a1;}
+    
+    double a2() const {return m_a2;}
+    
+    double b0() const {return m_b0;}
+    
+    double b1() const {return m_b1;}
+    
+    double b2() const {return m_b2;}
+    
+    double b3() const {return m_b3;}
+    
+private:
+
+    static std::vector<Mutation::Utilities::Units> sm_aunits;    
+    static std::vector<Mutation::Utilities::Units> sm_eunits;
+
+    double m_n;
+    double m_temp;
+    double m_a0;
+    double m_a1;
+    double m_a2;
+    double m_b0;
+    double m_b1;
+    double m_b2;
+    double m_b3;
+    
+};
+
+/**
+ * Constant rate law (independant of temperature).
+ */
+class constRate : public RateLaw
+{
+public:
+
+    static void setUnits(const Mutation::Utilities::IO::XmlElement& node);
+    
+    constRate(const Mutation::Utilities::IO::XmlElement& node, const int order);
+    
+    constRate(const constRate& to_copy) : m_lnA(to_copy.m_lnA) { };
+    
+    virtual ~constRate() { };
+    
+    constRate* clone() const {
+        return new constRate(*this);
+    }
+    
+    inline double getLnRate() const {
+        return (m_lnA);
+    }
+    
+    inline double derivative() const {
+        return (0.0);
+    }
+    
+private:
+
+    static std::vector<Mutation::Utilities::Units> sm_aunits;
+    double m_lnA;
+};
+
     } // namespace Kinetics
 } // namespace Mutation
 

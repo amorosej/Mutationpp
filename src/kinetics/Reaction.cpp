@@ -80,6 +80,10 @@ Reaction::Reaction(const IO::XmlElement& node, const class Thermodynamics& therm
     for ( ; iter != node.end(); ++iter) {
         if (iter->tag() == "arrhenius") {
             mp_rate = new Arrhenius(*iter, order());
+        } else if (iter->tag() == "rationalexp") {
+            mp_rate = new rationalExp(*iter, order());
+        } else if (iter->tag() == "constRate") {
+            mp_rate = new constRate(*iter, order());
         } else if (iter->tag() == "M") {
             if (m_thirdbody) {
                 std::vector<std::string> tokens;
