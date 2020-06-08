@@ -327,6 +327,35 @@ void printMixtureInfo(const Mixture& mixture)
             cout << setw(7)  << rate.n();
             cout.precision(1);
             cout << setw(10) << rate.T();
+            
+        } else if (dynamic_cast<const rationalExp*>(r.rateLaw()) != NULL) {
+            const rationalExp& rate =
+                dynamic_cast<const rationalExp&>(*(r.rateLaw()));
+            cout << setw(24) << "rationalExp: ";
+            cout.setf(std::ios::right, std::ios::adjustfield);
+            cout.setf(std::ios::fixed, std::ios::floatfield);
+            cout.precision(2);
+            cout << setw(7)  << rate.n();
+            cout.precision(1);
+            cout << setw(10) << rate.T();
+            cout.setf(std::ios::scientific, std::ios::floatfield);
+            cout.precision(3);
+            cout << "  a0 =" << setw(11) << rate.a0();
+            cout << "  a1 =" << setw(11) << rate.a1();
+            cout << "  a2 =" << setw(11) << rate.a2();
+            cout << "  b0 =" << setw(11) << rate.b0();
+            cout << "  b1 =" << setw(11) << rate.b1();
+            cout << "  b2 =" << setw(11) << rate.b2();
+            cout << "  b3 =" << setw(11) << rate.b3();
+            
+        } else if (dynamic_cast<const constRate*>(r.rateLaw()) != NULL) {
+            const constRate& rate =
+                dynamic_cast<const constRate&>(*(r.rateLaw()));
+            cout << setw(12) << "Constant: ";
+            cout.setf(std::ios::right, std::ios::adjustfield);
+            cout.setf(std::ios::scientific, std::ios::floatfield);
+            cout.precision(3);
+            cout << setw(12) << exp(rate.getLnRate());
         }
 
         cout << endl;
