@@ -1,0 +1,7 @@
+<!-- Fitted vibrational energy source term for SE processes -->                                                      
+<pipo>
+
+    <!-- N2 1st positive -->
+    <transition formula=" " a0="1.0" />
+
+</pipo>
