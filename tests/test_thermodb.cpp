@@ -150,7 +150,7 @@ void checkThermoDBLoad(ThermoDB* db, int flags)
 
     if (flags & AIR5) {
         SECTION("5-species air") {
-            db->load(std::string("N O N2 NO O2"));
+            db->load(std::string("N O N2 NO O2"), std::vector<std::pair<std::string,std::string> >());
             CHECK(db->standardPressure() == ONEATM);
             CHECK(db->standardTemperature() == 298.15);
 
@@ -179,7 +179,7 @@ void checkThermoDBLoad(ThermoDB* db, int flags)
 
     if (flags & MULTIPHASE) {
         SECTION("Multiphase CO2") {
-            db->load(std::string("C(gr) C O CO CO2"));
+            db->load(std::string("C(gr) C O CO CO2"), std::vector<std::pair<std::string,std::string> >());
             CHECK(db->standardPressure() == ONEATM);
             CHECK(db->standardTemperature() == 298.15);
 

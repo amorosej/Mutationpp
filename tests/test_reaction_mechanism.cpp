@@ -142,7 +142,7 @@ TestMechanism::TestMechanism(bool reversible) :
 
     // Thermodynamics database
     m_thermo = SharedPtr<ThermoDB>(Factory<ThermoDB>::create("RRHO", 0));
-    m_thermo->load(m_species);
+    m_thermo->load(m_species, std::vector<std::pair<std::string,std::string> >() );
 }
 
 SharedPtr<Mixture> TestMechanism::representativeMixture()

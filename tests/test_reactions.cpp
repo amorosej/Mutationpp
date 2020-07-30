@@ -31,7 +31,8 @@ void checkReactionType(const std::string& formula, ReactionType type)
 {
     // Setup a shared thermo object for testing reaction types
     static Mutation::Thermodynamics::Thermodynamics thermo(
-        "e- N N+ Ar(1) Ar(2) Ar+(0) O O- O+ NO NO+ N2 N2+ O2 O2+ He+ He++", 
+        "e- N N+ Ar(1) Ar(2) Ar+(0) O O- O+ NO NO+ N2 N2+ O2 O2+ He+ He++",
+        std::vector<std::pair<std::string,std::string> >(),
         "RRHO", "ChemNonEq1T");
 
     XmlElement node(

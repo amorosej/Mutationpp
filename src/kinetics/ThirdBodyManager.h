@@ -33,6 +33,7 @@
 #include <utility>
 
 #include <iostream>
+#include "Thermodynamics.h"
 
 namespace Mutation {
     namespace Kinetics {
