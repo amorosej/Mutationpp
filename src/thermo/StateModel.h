@@ -95,8 +95,10 @@ public:
         delete [] mp_X;
 
         // Delete transfer models
-        for (int i = 0; i < m_transfer_models.size(); ++i)
-            delete m_transfer_models[i].second;
+        for (int i = 0; i < m_source_terms.size(); ++i)
+            delete m_source_terms[i].second;
+        for (int i = 0; i < m_transfer_terms.size(); ++i)
+            delete m_transfer_terms[i].second;
     }
     
     /**
@@ -273,27 +275,42 @@ public:
      */
     virtual void energyTransferSource(double* const p_omega)
     {
-        for (int i = 0; i < m_nenergy-1; ++i)
+        for (int i = 0; i < m_nenergy; ++i)
             p_omega[i] = 0.0;
 
-        for (int i = 0; i < m_transfer_models.size(); ++i)
-            p_omega[m_transfer_models[i].first] +=
-                m_transfer_models[i].second->source();
+        for (int i = 0; i < m_source_terms.size(); ++i)
+            p_omega[m_source_terms[i].first] +=
+                m_source_terms[i].second->source();
+        
+        for (int i = 0; i < m_transfer_terms.size(); ++i) {
+            double s = m_transfer_terms[i].second->source();
+            p_omega[m_transfer_terms[i].first.first] += s;
+            p_omega[m_transfer_terms[i].first.second] -= s;
+        }
     }
     
 protected:
     /**
-    * @todo add a removeTransferTerm for the case wehen the
-    * source term is negative, e.g, solving Vibrational
-    * and Electronic energy equations
+    * Total energy <=> i=0.
     */
     void addTransferTerm(int i, Mutation::Transfer::TransferModel* p_term)
     {
+        // Energy may be removed from total energy bath (i=0).
         assert(i >= 0);
-        assert(i < m_nenergy-1);
-        m_transfer_models.push_back(std::make_pair(i, p_term));
+        assert(i < m_nenergy);
+        m_source_terms.push_back(std::make_pair(i, p_term));
     }
-
+    
+    void addTransferTerm(int i, int j, Mutation::Transfer::TransferModel* p_term)
+    {
+        // Energy cannot be transferred from total energy bath (i=0).
+        assert(i > 0);
+        assert(i < m_nenergy);
+        assert(j > 0);
+        assert(j < m_nenergy);
+        m_transfer_terms.push_back(std::make_pair(std::make_pair(i,j), p_term));
+    }
+    
     /**
      * Solves the general form of an energy equation
      * \f[ f(T) = T \left[\sum_i \tilde{\rho}_i \left(\frac{H_i(T)}{R_uT}\right)
@@ -403,9 +420,11 @@ protected:
     
     double* mp_X;
     
-
     std::vector< std::pair<int, Mutation::Transfer::TransferModel*> >
-        m_transfer_models;
+        m_source_terms;
+    std::vector< std::pair<std::pair<int, int>, Mutation::Transfer::TransferModel*> >
+        m_transfer_terms;
+    
 private:
 
 
