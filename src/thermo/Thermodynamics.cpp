@@ -73,6 +73,10 @@ Thermodynamics::Thermodynamics(
         m_nmolecules += (species(i).type() == MOLECULE ? 1 : 0);
     }
     
+    // Add the species groups to the map
+    for (int i = 0; i < nSgroups(); ++i)
+        m_sgroup_indices[sgroupName(i)] = i;
+    
     m_has_electrons = (species(0).type() == ELECTRON);
     
     m_ngas = 0;

@@ -52,6 +52,7 @@ void swap(Reaction& left, Reaction& right) {
     swap(left.m_nPhotProd,   right.m_nPhotProd);
     swap(left.m_type,        right.m_type);
     swap(left.mp_rate,       right.mp_rate);
+    swap(left.m_inertBodyGroups, right.m_inertBodyGroups);
 }
 
 //==============================================================================
@@ -98,6 +99,9 @@ Reaction::Reaction(const IO::XmlElement& node, const class Thermodynamics& therm
                     if (index >= 0) {
                         m_thirdbodies.push_back(
                             std::make_pair(index, atof(tokens[i+1].c_str())));
+                    } else if (thermo.sgroupIndex(tokens[i]) >= 0) {
+                        m_inertBodyGroups.push_back(std::make_pair(
+                            thermo.sgroupIndex(tokens[i]), atof(tokens[i+1].c_str())));
                     } else {
                         iter->parseError((
                             std::string("Thirdbody species ") + tokens[i] +
@@ -142,6 +146,9 @@ bool Reaction::operator == (const Reaction& r)
 {
     // Either both reactions are thirdbody or not
     if (isThirdbody() == r.isThirdbody()) {
+        
+        bool checkTB = false;
+        
         // A + B <=> AB  =  A + B <=> AB
         // A + B  => AB  =  A + B <=> AB
         // A + B <=> AB  =  A + B  => AB
@@ -150,7 +157,7 @@ bool Reaction::operator == (const Reaction& r)
             m_products == r.m_products &&
             m_nPhotReac == r.m_nPhotReac &&
             m_nPhotProd == r.m_nPhotProd)
-            return true;
+            checkTB = true;
 
         // A + B <=> AB  =  AB <=> A + B,
         // A + B  => AB  =  AB <=> A + B,
@@ -160,7 +167,18 @@ bool Reaction::operator == (const Reaction& r)
             m_nPhotReac == r.m_nPhotProd &&
             m_nPhotProd == r.m_nPhotReac &&
             (isReversible() || r.isReversible()))
-            return true;
+            checkTB = true;
+        
+        if (checkTB && isThirdbody()) {
+            // If thirdbody reactions, check that the TB are different
+            // (a zero default TB efficiency is assumed).
+            for (int i = 0; i < efficiencies().size(); ++i)
+                for (int j = 0; j < r.efficiencies().size(); ++j)
+                    if (efficiencies()[i].first == r.efficiencies()[j].first)
+                        return true;
+        } else
+            return checkTB;
+
     }
 
     // In the case where one reaction is thirdbody, we have to check if the non-

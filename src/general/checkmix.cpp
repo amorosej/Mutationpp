@@ -266,7 +266,20 @@ void printMixtureInfo(const Mixture& mixture)
         cout << setw(5) << mixture.getDefaultComposition(i) << endl;
     }
 
-    cout << endl;
+     cout << endl;
+     
+     if (mixture.nSgroups() > 0) {
+        cout << "Species groups:" << endl;
+        cout << "---------------" << endl;
+        for (int i = 0; i < mixture.nSgroups(); ++i) {
+            cout.setf(std::ios::left, std::ios::adjustfield);
+            cout << "   " << setw(3) << mixture.sgroupName(i) << ": ";
+            for (int j = 0; j < mixture.sgroup(i).size(); ++j)
+                cout << mixture.speciesName(mixture.sgroup(i)[j]) << "  ";
+            cout << endl;
+        }
+        cout << endl;
+     }
 
     if (nr == 0) return;
 
@@ -362,22 +375,45 @@ void printMixtureInfo(const Mixture& mixture)
 
         // If this is a thirdbody reaction, print out thirdbody efficiency
         // factors
-        if (r.isThirdbody() && r.efficiencies().size() > 0) {
+        if (r.isThirdbody()) {
+            
+            if (r.efficiencies().size() > 0) {
 
-            vector<pair<int, double> >::const_iterator iter =
-                r.efficiencies().begin();
+                vector<pair<int, double> >::const_iterator iter =
+                    r.efficiencies().begin();
 
-            cout.precision(2);
-            cout << setw(6) << "" << mixture.speciesName(iter->first) << ": "
-                << iter->second;
-
-            for (iter++; iter != r.efficiencies().end(); ++iter) {
-                cout << ", " << mixture.speciesName(iter->first) << ": "
+                cout.precision(2);
+                cout << setw(6) << "" << mixture.speciesName(iter->first) << ": "
                     << iter->second;
-            }
 
+                for (iter++; iter != r.efficiencies().end(); ++iter) {
+                    cout << ", " << mixture.speciesName(iter->first) << ": "
+                        << iter->second;
+                }
+
+            }
+            
+            if (r.sgroupEfficiencies().size() > 0) {
+
+                vector<pair<int, double> >::const_iterator iter =
+                    r.sgroupEfficiencies().begin();
+
+                cout.precision(2);
+                if (r.efficiencies().size() < 1) {
+                    cout << setw(6) << "" << mixture.sgroupName(iter->first) << ": "
+                        << iter->second;
+                    iter++;
+                }
+
+                for ( ; iter != r.sgroupEfficiencies().end(); ++iter)
+                    cout << ", " << mixture.sgroupName(iter->first) << ": "
+                        << iter->second;
+                
+            }
+            
             cout << endl;
         }
+        
     }
 
     cout << endl;

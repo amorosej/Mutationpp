@@ -49,7 +49,7 @@ Kinetics::Kinetics(
     : m_name("unnamed"),
       m_thermo(thermo),
       mp_rates(NULL),
-      m_thirdbodies(thermo.nSpecies(), m_thermo.hasElectrons()),
+      m_thirdbodies(thermo.nSpecies(), m_thermo.hasElectrons(), thermo),
       m_jacobian(thermo),
       mp_ropf(NULL),
       mp_ropb(NULL),
@@ -128,7 +128,7 @@ void Kinetics::addReaction(const Reaction& reaction)
     
     // Add thirdbodies if necessary
     if (reaction.isThirdbody())
-        m_thirdbodies.addReaction(nReactions()-1, reaction.efficiencies());
+        m_thirdbodies.addReaction(nReactions()-1, reaction.efficiencies(), reaction.sgroupEfficiencies());
     
     // Add the reaction to the jacobian managaer
     m_jacobian.addReaction(reaction);
