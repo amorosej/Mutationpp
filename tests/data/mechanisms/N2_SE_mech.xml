@@ -1,0 +1,13 @@
+<mechanism name="test">
+    
+    <arrhenius_units A="mol,cm,s,K" E="kcal,mol,K" />
+    
+    <reaction formula="N2(1)+N2(1)=N2(2)+N2(1)">
+        <arrhenius A="7.0E+21" n="-1.6" T="113200." />
+    </reaction>
+    
+    <reaction formula="N2(2)=>N2(1)+hv">
+        <arrhenius A="7.0E+21" n="-1.6" T="113200." />
+    </reaction>
+
+</mechanism>

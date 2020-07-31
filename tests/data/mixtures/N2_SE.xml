@@ -1,0 +1,11 @@
+<mixture state_model="ChemNonEq1T" thermo_db="RRHO" mechanism="N2_SE_mech">
+
+    <species>
+        N2(*)
+    </species>
+    
+    <element_compositions default="N">
+        <composition name="N"> N: 1.0 </composition>
+    </element_compositions>
+
+</mixture>

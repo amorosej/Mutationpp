@@ -30,6 +30,7 @@ add_sources(mutation++
     OmegaI.cpp
     OmegaVT.cpp
     OmegaSEf.cpp
+    OmegaSEv.cpp
 )
 
 add_headers(mutation++

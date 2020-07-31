@@ -1,0 +1,7 @@
+<!-- Fitted vibrational energy source term for SE processes -->                                                      
+<SEv>
+
+    <!-- N2 1st positive -->
+    <transition formula="N2(2)=>N2(1)+hv" a3="1" b2="0.1" b0="1e-3" />
+
+</SEv>

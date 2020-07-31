@@ -143,6 +143,7 @@ TEST_CASE("Loading test mixtures", "[loading][mixtures]")
     checkTestMixture("air5_RRHO_ChemNonEqTTv", 5, 2, 4, false);
     checkTestMixture("argon_CR_ChemNonEq1T", 33, 2, 992, true);
     checkTestMixture("argon_CR_ChemNonEqTTv", 33, 2, 992, true);
+    checkTestMixture("N2_SE", 8, 1, 2, false);
 }
 
 class CoutRedirect
