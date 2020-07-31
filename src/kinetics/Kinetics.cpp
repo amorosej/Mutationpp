@@ -85,6 +85,8 @@ Kinetics::Kinetics(
             Arrhenius::setUnits(*iter);
         else if (iter->tag() == "rationalexp_units")
             rationalExp::setUnits(*iter);
+        else if (iter->tag() == "expRat33_units")
+            expRat33::setUnits(*iter);
         else if (iter->tag() == "constRate_units")
             constRate::setUnits(*iter);
     }

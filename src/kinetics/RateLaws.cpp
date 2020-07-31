@@ -199,6 +199,36 @@ constRate::constRate(const XmlElement& node, const int order)
 
 //==============================================================================
 
+void expRat33::setUnits(const XmlElement& node)
+{
+    assert( node.tag() == "expRat33_units" );
+    std::string a;
+    node.getAttribute("A", a);
+    sm_aunits = Units::split(a);
+}
+
+std::vector<Units> expRat33::sm_aunits = std::vector<Units>();
+
+expRat33::expRat33(const XmlElement& node, const int order)
+{
+    assert( node.tag() == "expRat33" );
+    
+    if (sm_aunits.empty())
+        sm_aunits = _default_aunits();
+    
+    // Load the coefficients
+    node.getAttribute("a0", m_a0, 1.0);
+    node.getAttribute("b0", m_b0, 1.0);
+    node.getAttribute("a1", m_a1, 0.0);
+    node.getAttribute("b1", m_b1, 0.0);
+    node.getAttribute("a2", m_a2, 0.0);
+    node.getAttribute("b2", m_b2, 0.0);
+    node.getAttribute("a3", m_a3, 0.0);
+    
+}
+
+//==============================================================================
+
     } // namespace Kinetics
 } // namespace Mutation
 

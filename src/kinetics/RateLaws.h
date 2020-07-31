@@ -200,6 +200,51 @@ private:
     double m_lnA;
 };
 
+
+/**
+ * Exponential of a rational function of T.
+ */
+class expRat33 : public RateLaw
+{
+public:
+
+    static void setUnits(const Mutation::Utilities::IO::XmlElement& node);
+    
+    expRat33(const Mutation::Utilities::IO::XmlElement& node, const int order);
+    
+    expRat33(const expRat33& to_copy)
+        : m_a0(to_copy.m_a0), m_a1(to_copy.m_a1), m_a2(to_copy.m_a2), m_a3(to_copy.m_a3),
+          m_b0(to_copy.m_b0), m_b1(to_copy.m_b1), m_b2(to_copy.m_b2)
+    { }
+    
+    virtual ~expRat33() { };
+    
+    expRat33* clone() const {
+        return new expRat33(*this);
+    }
+    
+    inline double getLnRate(const double T) const {
+        return ( (m_a0 + (m_a1 + (m_a2 + m_a3*T)*T)*T)
+            /(m_b0 + (m_b1 + (m_b2 + T)*T)*T) );
+    }
+    
+    double a0() const {return m_a0;}
+    double a1() const {return m_a1;}
+    double a2() const {return m_a2;}
+    double a3() const {return m_a3;}
+    double b0() const {return m_b0;}
+    double b1() const {return m_b1;}
+    double b2() const {return m_b2;}
+    
+private:
+
+    static std::vector<Mutation::Utilities::Units> sm_aunits;    
+
+    double m_a0, m_a1, m_a2, m_a3;
+    double m_b0, m_b1, m_b2;
+    
+};
+
     } // namespace Kinetics
 } // namespace Mutation
 

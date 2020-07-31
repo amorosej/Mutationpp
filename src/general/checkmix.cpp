@@ -348,6 +348,21 @@ void printMixtureInfo(const Mixture& mixture)
             cout << "  b2 =" << setw(11) << rate.b2();
             cout << "  b3 =" << setw(11) << rate.b3();
             
+        } else if (dynamic_cast<const expRat33*>(r.rateLaw()) != NULL) {
+            const expRat33& rate =
+                dynamic_cast<const expRat33&>(*(r.rateLaw()));
+            cout << setw(12) << "expRat33: ";
+            cout.setf(std::ios::right, std::ios::adjustfield);
+            cout.setf(std::ios::scientific, std::ios::floatfield);
+            cout.precision(3);
+            cout << "  a0 =" << setw(11) << rate.a0();
+            cout << "  a1 =" << setw(11) << rate.a1();
+            cout << "  a2 =" << setw(11) << rate.a2();
+            cout << "  a3 =" << setw(11) << rate.a3();
+            cout << "  b0 =" << setw(11) << rate.b0();
+            cout << "  b1 =" << setw(11) << rate.b1();
+            cout << "  b2 =" << setw(11) << rate.b2();
+            
         } else if (dynamic_cast<const constRate*>(r.rateLaw()) != NULL) {
             const constRate& rate =
                 dynamic_cast<const constRate&>(*(r.rateLaw()));

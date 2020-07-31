@@ -7,7 +7,7 @@
     </reaction>
     
     <reaction formula="N2(2)=>N2(1)+hv">
-        <arrhenius A="7.0E+21" n="-1.6" T="113200." />
+        <expRat33 a3="11.88e-6" a2="64.03e-4" a1="4.391e+02" a0="-4.903e+05" b2="5.399e-4" b1="3929e-2" b0="-4.374e+04" />
     </reaction>
 
 </mechanism>

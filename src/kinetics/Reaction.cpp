@@ -82,6 +82,8 @@ Reaction::Reaction(const IO::XmlElement& node, const class Thermodynamics& therm
             mp_rate = new Arrhenius(*iter, order());
         } else if (iter->tag() == "rationalexp") {
             mp_rate = new rationalExp(*iter, order());
+        } else if (iter->tag() == "expRat33") {
+            mp_rate = new expRat33(*iter, order());
         } else if (iter->tag() == "constRate") {
             mp_rate = new constRate(*iter, order());
         } else if (iter->tag() == "M") {

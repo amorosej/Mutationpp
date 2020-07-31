@@ -120,6 +120,7 @@ SELECT_RATE_LAWS(EXCITATION_E,               TeSelector,   TeSelector)
 SELECT_RATE_LAWS(RADIATIVE_RECOMBINATION,    TeSelector,   TSelector)
 SELECT_RATE_LAWS(RADIATIVE_ATTACHMENT,       TeSelector,   TSelector)
 SELECT_RATE_LAWS(RADIATIVE_ASSOCIATION,      TSelector,    TSelector)
+SELECT_RATE_LAWS(BND_BND_EMISSION,           TeSelector,   TeSelector)
 
 #undef SELECT_RATE_LAWS
 
@@ -163,6 +164,7 @@ void RateManager::addReaction(const size_t rxn, const Reaction& reaction)
     
     if ( (typeid(*p_rate) == typeid(Arrhenius))
         || (typeid(*p_rate) == typeid(constRate))
+        || (typeid(*p_rate) == typeid(expRat33))
         || (typeid(*p_rate) == typeid(rationalExp)) ) {
         // One-temperature-rate-law reactions
         selectRate<MAX_REACTION_TYPES-1>(rxn, reaction);
@@ -190,6 +192,10 @@ void RateManager::selectRate(
             typedef RateLawGroup1T<rationalExp, typename RateSelector<NReactionTypes>::ForwardGroup> FWD;
             typedef RateLawGroup1T<rationalExp, typename RateSelector<NReactionTypes>::ReverseGroup> REV;
             addRate<FWD, REV>(rxn, reaction);
+        } else if (typeid(*p_rate) == typeid(expRat33)) {
+            typedef RateLawGroup1T<expRat33, typename RateSelector<NReactionTypes>::ForwardGroup> FWD;
+            typedef RateLawGroup1T<expRat33, typename RateSelector<NReactionTypes>::ReverseGroup> REV;
+            addRate<FWD, REV>(rxn, reaction);
         } else if (typeid(*p_rate) == typeid(constRate)) {
             typedef RateLawGroup1T<constRate, typename RateSelector<NReactionTypes>::ForwardGroup> FWD;
             typedef RateLawGroup1T<constRate, typename RateSelector<NReactionTypes>::ReverseGroup> REV;
@@ -213,6 +219,10 @@ void RateManager::selectRate<0>(
     } else if (typeid(*p_rate) == typeid(rationalExp)) {
         typedef RateLawGroup1T<rationalExp, typename RateSelector<0>::ForwardGroup> FWD;
         typedef RateLawGroup1T<rationalExp, typename RateSelector<0>::ReverseGroup> REV;
+        addRate<FWD, REV>(rxn, reaction);
+    } else if (typeid(*p_rate) == typeid(expRat33)) {
+        typedef RateLawGroup1T<expRat33, typename RateSelector<0>::ForwardGroup> FWD;
+        typedef RateLawGroup1T<expRat33, typename RateSelector<0>::ReverseGroup> REV;
         addRate<FWD, REV>(rxn, reaction);
     } else if (typeid(*p_rate) == typeid(constRate)) {
         typedef RateLawGroup1T<constRate, typename RateSelector<0>::ForwardGroup> FWD;

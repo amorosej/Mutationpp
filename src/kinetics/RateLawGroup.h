@@ -324,6 +324,52 @@ private:
     
 };
 
+// Partial specialization of RateLawGroup1T for expRat33 rate law
+template <typename TSelectorType>
+class RateLawGroup1T <expRat33, TSelectorType> : public RateLawGroup
+{
+public:
+
+    /**
+     * Adds a new rate to evaluate with this group.
+     */
+    virtual void addRateCoefficient(
+        const size_t rxn, const RateLaw* const p_rate)
+    {
+        m_rates.push_back(
+            std::make_pair(rxn, dynamic_cast<const expRat33&>(*p_rate))
+        );
+    }
+    
+    /**
+     * Evaluates all of the rates in the group and stores in the given vector.
+     */
+    virtual void lnk(
+        const Thermodynamics::StateModel* const p_state, double* const p_lnk)
+    {
+        // Determine the reaction temperature for this group
+        this->m_t = TSelectorType().getT(p_state);
+
+        const double T = this->m_t;
+
+        for (int i = 0; i < m_rates.size(); ++i) {
+            const std::pair<size_t, expRat33>& rate = m_rates[i];
+            p_lnk[rate.first] = rate.second.getLnRate(T);
+        }
+
+        // Save this temperature
+        this->m_last_t = this->m_t;
+        
+        // Compute and store the correction factor
+        this->m_lnKeqCorrFac = TSelectorType().lnKeqCorrFac(p_state);
+    }
+
+private:
+    
+    /// vector of rates to evaluate
+    std::vector< std::pair<size_t, expRat33> > m_rates;
+    
+};
 
 //==============================================================================
 
