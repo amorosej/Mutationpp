@@ -27,6 +27,7 @@
 
 #include "ThermoDB.h"
 #include "Utilities.h"
+// #include "Species.h"
 
 #include <Eigen/Dense>
 using namespace Eigen;
@@ -55,6 +56,7 @@ bool ThermoDB::load(const SpeciesListDescriptor& descriptor)
     // species and elements are cleared
     m_species.clear();
     m_elements.clear();
+    m_sgroups.clear();
     
     // Load all possible species from the concrete database type
     std::list<Species> species_list;
@@ -105,6 +107,16 @@ bool ThermoDB::load(const SpeciesListDescriptor& descriptor)
             std::cout << "  " << missing[i] << std::endl;
         return false;
     }
+    
+    // Create groups gathering excited states of the same species
+    std::map<std::string, std::vector<int> > sgroup_map;
+    for (int i = 0; i < m_species.size(); ++i)
+        if (m_species[i].levelType() > NONE)
+            sgroup_map[m_species[i].groundStateName()].push_back(i);
+    
+    for (std::map<std::string, std::vector<int> >::iterator it = sgroup_map.begin();
+         it != sgroup_map.end() ; ++it)
+        m_sgroups.push_back(Sgroup(it->first, it->second));
     
     // Finally fill our elements vector with only the elements that are required
     // for the species list

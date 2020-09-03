@@ -33,6 +33,7 @@
 #include <utility>
 
 #include <iostream>
+#include "Thermodynamics.h"
 
 namespace Mutation {
     namespace Kinetics {
@@ -46,16 +47,21 @@ class PartialThirdbodyEffs
 public:
 
     PartialThirdbodyEffs(
-        const size_t rxn, const std::vector<std::pair<int, double> >& effs)
-        : m_rxn(rxn), m_effs(effs)
+        const size_t rxn, const std::vector<std::pair<int, double> >& effs,
+        const std::vector<std::pair<int, double> >& gEffs)
+        : m_rxn(rxn), m_effs(effs), m_groupEffs(gEffs)
     { }
     
     inline void multiplyEfficiencies(
-        double sum, const double* const p_s, double* const p_r) const
+        double sum, const double* const p_s, const double* const p_g, double* const p_r) const
     {
         std::vector<std::pair<int, double> >::const_iterator iter;
+        
         for (iter = m_effs.begin(); iter != m_effs.end(); ++iter)
             sum += p_s[iter->first] * iter->second;
+        for (iter = m_groupEffs.begin(); iter != m_groupEffs.end(); ++iter)
+            sum += p_g[iter->first] * iter->second;
+        
         p_r[m_rxn] *= sum;
     }
     
@@ -63,6 +69,7 @@ private:
     
     size_t m_rxn;
     std::vector<std::pair<int, double> > m_effs;
+    std::vector<std::pair<int, double> > m_groupEffs;
     
 }; // class PartialThirdbodyEffs
 
@@ -78,26 +85,38 @@ public:
     /**
      * Constructor
      */
-    ThirdbodyManager(const size_t ns, const bool electrons)
-        : m_ns(ns), m_offset(electrons ? 1 : 0)
-    { }
+    ThirdbodyManager(const size_t ns, const bool electrons,
+                     const Mutation::Thermodynamics::Thermodynamics& thermo)
+        : m_ns(ns), m_offset(electrons ? 1 : 0), m_thermo(thermo)
+    { 
+        p_g = new double [m_thermo.nSgroups()];
+    }
+    
+    /**
+     * Destructor.
+     */
+    ~ThirdbodyManager() {
+        delete [] p_g;
+    }
     
     /**
      * Adds a new thirdbody reaction to be managed by this manager.
      */
-    void addReaction(
-        const size_t rxn, const std::vector<std::pair<int, double> > effs)
+    void addReaction(const size_t rxn,
+        const std::vector<std::pair<int, double> > effs,
+        const std::vector<std::pair<int, double> > gEffs)
     {
-        std::vector<std::pair<int, double> > partial_effs;
-        std::vector<std::pair<int, double> >::const_iterator iter;
+//         std::vector<std::pair<int, double> > partial_effs;
+//         std::vector<std::pair<int, double> >::const_iterator iter;
+//         
+//         for (iter = effs.begin(); iter != effs.end(); ++iter) {
+//             if (iter->second != 1.0)
+//                 partial_effs.push_back(
+//                     std::make_pair(iter->first, iter->second - 1.0));
+//         }
+//         m_effs.push_back(PartialThirdbodyEffs(rxn, partial_effs));
         
-        for (iter = effs.begin(); iter != effs.end(); ++iter) {
-            if (iter->second != 1.0)
-                partial_effs.push_back(
-                    std::make_pair(iter->first, iter->second - 1.0));
-        }
-        
-        m_effs.push_back(PartialThirdbodyEffs(rxn, partial_effs));
+        m_effs.push_back(PartialThirdbodyEffs(rxn, effs, gEffs));
     }
 
     /**
@@ -107,11 +126,14 @@ public:
      */
     void multiplyThirdbodies(const double* const p_s, double* const p_r) const
     {
-        double sum = std::accumulate(p_s+m_offset, p_s+m_ns, 0.0);
+        // double sum = std::accumulate(p_s+m_offset, p_s+m_ns, 0.0);
+        double sum = 0.0;
+        
+        m_thermo.sumSgroupMembersValues(p_s, p_g);
         
         std::vector<PartialThirdbodyEffs>::const_iterator iter = m_effs.begin();
         for ( ; iter != m_effs.end(); ++iter)
-            iter->multiplyEfficiencies(sum, p_s, p_r);
+            iter->multiplyEfficiencies(sum, p_s, p_g, p_r);
     }
 
 private:
@@ -119,6 +141,10 @@ private:
     const size_t m_ns;
     const size_t m_offset;
     std::vector<PartialThirdbodyEffs> m_effs;
+    
+    const Mutation::Thermodynamics::Thermodynamics& m_thermo;
+    
+    double* p_g;
     
 }; // class ThirdbodyManager
 

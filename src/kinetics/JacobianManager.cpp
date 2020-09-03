@@ -112,13 +112,21 @@ void JacobianManager::addReactionStoich(
     if (reaction.isThirdbody()) {
         // Thirdbody reactions        
         for (int i = 0; i < m_thermo.nSpecies(); ++i)
-            mp_work[i] = 1.0;
+            //mp_work[i] = 1.0;
+            mp_work[i] = 0.0;
         if (m_thermo.hasElectrons())
             mp_work[0] = 0.0;
         
         for (int i = 0; i < reaction.efficiencies().size(); ++i)
             mp_work[reaction.efficiencies()[i].first] = 
                 reaction.efficiencies()[i].second;
+        
+        // species groups efficiencies
+        for (int i = 0; i < reaction.sgroupEfficiencies().size(); ++i) {
+            int g = reaction.sgroupEfficiencies()[i].first;
+            for (int j = 0; j < m_thermo.sgroup(g).size(); ++j)
+                mp_work[m_thermo.sgroup(g)[j]] += reaction.sgroupEfficiencies()[i].second;
+        }
         
         switch (type) {
             case STOICH_11:

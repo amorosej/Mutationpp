@@ -886,6 +886,51 @@ public:
         const double P, const double Bg, double &Bc, double &hw,
         double *const p_Xs = NULL);
     
+    
+    /**
+     * Returns the number of species groups in the mixture.
+     */
+    int nSgroups() const { 
+        return mp_thermodb->sgroups().size();
+    }
+    
+    /**
+     * Returns the list of species belonging to group i.
+     */
+    const std::vector<int>& sgroup(int i) const {
+        assert(i >= 0);
+        assert(i < nSgroups());
+        return mp_thermodb->sgroups()[i].species();
+    }
+    
+    /**
+     * Returns the index in the species groups array assigned to the group with the
+     * given name.  If no group exists with that name, then the index is < 0.
+     */
+    int sgroupIndex(const std::string &name) const {
+        std::map<std::string, int>::const_iterator iter = 
+            m_sgroup_indices.find(name);
+        return (iter != m_sgroup_indices.end() ? iter->second : -1);
+    }
+    
+    /**
+     * Returns the name of the species group with the given index.
+     */
+    const std::string& sgroupName(int i) const {
+        assert(i >= 0);
+        assert(i < nSgroups());
+        return mp_thermodb->sgroups()[i].name();
+    }
+    
+    void sumSgroupMembersValues(const double* const p_s, double* const p_g) const {
+        for (int i = 0; i < nSgroups(); ++i) {
+            p_g[i] = 0.0;
+            for (int j = 0; j < sgroup(i).size(); ++j) {
+                p_g[i] += p_s[sgroup(i)[j]];
+            }
+        }
+    }
+    
 private:
 
     void sumSpeciesMass(
@@ -906,7 +951,8 @@ protected:
 
     std::map<std::string, int> m_species_indices;
     std::map<std::string, int> m_element_indices;
-
+    std::map<std::string, int> m_sgroup_indices;
+    
 private:
   
     ThermoDB* mp_thermodb;
