@@ -132,7 +132,6 @@ public:
             // Radiative terms
             addTransferTerm(0, Factory::create("OmegaSEf", mix));
             addTransferTerm(0, Factory::create("OmegaSEv", mix));
-            addTransferTerm(1, Factory::create("OmegaSEv", mix));
 
         } catch (Error& e) {
             e << "\nWas trying to load a energy transfer model.";
